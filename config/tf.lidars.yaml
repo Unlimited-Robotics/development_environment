@@ -1,0 +1,17 @@
+front_lidar:
+    parent_link: 'base_link'
+    child_link:  'front_laser_frame'
+    translation: [0.15, 0.0, 0.43]
+    rotation:    [0.0, 0.0, 0.01]
+
+back_lidar:
+    parent_link: 'base_link'
+    child_link:  'back_laser_frame'
+    translation: [-0.15, 0.0, 0.43]
+    rotation:    [0.0, 0.0, 3.121592]
+
+merged_lidar:
+    parent_link: 'base_link'
+    child_link:  'merger_laser_frame'
+    translation: [0.0, 0.0, 0.4]
+    rotation:    [0.0, 0.0, 0.0]

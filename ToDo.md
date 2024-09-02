@@ -1,0 +1,1 @@
+- Set up global configuration path and env variables from there.

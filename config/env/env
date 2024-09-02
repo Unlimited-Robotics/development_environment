@@ -1,0 +1,8 @@
+# # RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
+# RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+# # FASTRTPS_DEFAULT_PROFILES_FILE="/robot/generic_static_data/dds_profiles/fastrtps_interface_restriction.xml"
+# FASTRTPS_DEFAULT_PROFILES_FILE=/robot/generic_static_data/dds_profiles/isaac_rtps_udp_profile.xml
+
+ROBOT_SERIAL=SIMULATOR001
+ROBOT_ID=SIMULATOR001
+CLIENT_ID=Temple_University_Hospital

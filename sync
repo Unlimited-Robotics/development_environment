@@ -1,0 +1,67 @@
+#!/usr/bin/python3
+import argparse
+
+from robotdevenv.profile import get_dev_profile
+from robotdevenv.profile import RobotDevComponent, RobotDevLocalConfig
+from robotdevenv.environment import get_environment, RobotDevEnvironment
+from robotdevenv.sync import sync_component_data, check_workspace
+from robotdevenv.managed_main_execution import managed_main_execution
+
+
+class RobotDevBuildROSPkgsError(Exception): pass
+
+
+print()
+
+print('🤖🤖 UR ROBOT DEVELOPMENT ENVIRONMENT 🤖🤖')
+print('  🦾 Sync Environment 🦿')
+print()
+
+
+def sync_component(
+            config: RobotDevLocalConfig,
+            env: RobotDevEnvironment,
+            component: RobotDevComponent,
+        ):
+    is_component_local = component.host_ip == 'localhost'
+
+    # Build
+
+    ## Set development path
+    if is_component_local:
+        print('  Local component, skipping...')
+        print()
+    else:
+        sync_component_data(config, component, env)
+
+
+def sync_all_components():
+    profile, config, _ = get_dev_profile()
+    env = get_environment()
+
+    check_workspace(config)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--component', type=str, required=False)
+    args = dict(parser.parse_known_args()[0]._get_kwargs())
+    arg_component = args['component']
+
+    known_component = False
+    
+    for component in profile.components:
+        if arg_component is None or arg_component==component.component:
+            print(f'📦📦  Component: {component.component}')
+            print()
+            sync_component(config, env, component)
+            known_component = True
+    
+    if not known_component:
+        raise RobotDevBuildROSPkgsError(
+                f'Unknown component \'{arg_component}\''
+            )
+
+
+
+if __name__ == "__main__":
+    managed_main_execution(sync_all_components)
+

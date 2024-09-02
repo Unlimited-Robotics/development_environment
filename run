@@ -1,0 +1,64 @@
+#!/usr/bin/python3
+import argparse
+
+from robotdevenv.component import RobotDevComponent
+from robotdevenv.robot import RobotDevRobot
+
+from robotdevenv.docker import run_command_inside_container
+# from robotdevenv.docker import get_component_volumes
+# from robotdevenv.sync import check_workspace
+from robotdevenv.managed_main_execution import managed_main_execution
+
+
+class RobotDevRunError(Exception): pass
+
+
+def run_command():
+
+    parser = argparse.ArgumentParser()
+    robot = RobotDevRobot(parser)
+    component = RobotDevComponent(parser, robot)
+
+    print()
+    print('🤖🤖 UR ROBOT DEVELOPMENT ENVIRONMENT 🤖🤖')
+    print(f'  🦾 Run command 🦿')
+    print()
+    print(f'📦📦  Component: {component.full_name}')
+    print(f'🤖🤖      Robot: {robot.name}')
+    print()
+
+    # check_workspace(config, only_warning=True)
+
+    parser.add_argument('-d', '--detach', action='store_true')
+    args = dict(parser.parse_known_args()[0]._get_kwargs())
+    arg_detach = args['detach']
+
+    command_args = parser.parse_known_args()[1]
+    if command_args:
+        command = ' '.join(command_args)
+    else:
+        command = ''
+
+    if command:
+        print(f'🦿  Command to run: \'{command}\'')
+        print()
+
+    volumes = component.get_volumes()
+
+    for volume in volumes:
+        print(volume)
+
+    run_command_inside_container(
+            env=env, 
+            config=config, 
+            component=component, 
+            command=command,
+            volumes=volumes,
+            interactive=not arg_detach,
+            detached_mode=arg_detach,
+            ignore_command_error=True,
+        )
+
+
+if __name__ == "__main__":
+    managed_main_execution(run_command)

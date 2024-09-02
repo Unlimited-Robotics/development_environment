@@ -1,0 +1,9 @@
+gary_lidar_merger_node:
+    lidars_to_merge: ["/gary/lidar/front/scan", "/gary/lidar/back/scan"]
+    lidars_frame: ["front_laser_frame", "back_laser_frame"]
+    input_angle_ranges: [[-2.111895, 1.029697], [-2.111895, 1.029697]]
+    input_range_inverted: [false, false]
+    constants_fix_slope: [[1.0, 0.0], [1.0, 0.0]]  #[a, b] where a*x + b  
+    enable_corrected_publishers: false
+    enable_dynamic_reconfig: false
+    dynamic_reconfig_frequency: 20.0                #Seconds to re-open file

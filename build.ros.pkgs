@@ -1,0 +1,168 @@
+#!/usr/bin/python3
+import subprocess
+import shutil
+import argparse
+
+from robotdevenv.profile import get_dev_profile
+from robotdevenv.profile import RobotDevComponent, RobotDevLocalConfig
+from robotdevenv.environment import get_environment, RobotDevEnvironment
+from robotdevenv.sync import check_workspace, sync_component_data
+from robotdevenv.docker import get_component_volumes
+from robotdevenv.docker import run_command_inside_container
+from robotdevenv.managed_main_execution import managed_main_execution
+
+from robotdevenv.constants import ROBOT_GENERIC_STATIC_DATA_PATH
+
+
+class RobotDevBuildROSPkgsError(Exception): pass
+
+
+print()
+
+print('🤖🤖 UR ROBOT DEVELOPMENT ENVIRONMENT 🤖🤖')
+print('  🦾 Build ROS packages 🦿')
+print()
+
+
+def build_ros_packages_component(
+            env: RobotDevEnvironment,
+            config: RobotDevLocalConfig,
+            component: RobotDevComponent,
+            args: dict,
+        ):
+    is_component_local = component.host_ip == 'localhost'
+
+    if not component.ros_pkgs:
+        raise RobotDevBuildROSPkgsError(
+                f'Component \'{component.component}\' does not include ros '
+                'packages to build'
+            )
+
+    # Cache update
+    ## Check if repeated or not ROS packages
+    unique_pkg_names = []
+    for package_full in component.ros_pkgs:
+        package = package_full.split('/')[-1]
+        if package not in unique_pkg_names:
+            unique_pkg_names.append(package)
+        else:
+            raise RobotDevBuildROSPkgsError(
+                    f'Package \'{package}\' is repeated'
+                )
+        dir_package = env.dev_env_path / 'src' / 'ros_pkgs' / package_full
+        if not (dir_package.exists() and dir_package.is_dir()):
+            raise RobotDevBuildROSPkgsError(
+                    f'Directory \'{package_full}\' does not exist'
+                )
+        if not (dir_package / 'package.xml').is_file():
+            raise RobotDevBuildROSPkgsError(
+                    f'Directory \'{package_full}\' is not a ROS package'
+                )
+    ## Local cache destination dir
+    destination_dir = \
+        env.dev_env_path / 'local_cache' / config.profile / component.component
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    ## Delete packages not needed anymore (from cache)
+    try:
+        current_packages = [
+                ruta.stem 
+                for ruta in destination_dir.iterdir() 
+                if ruta.is_dir()
+            ]
+        to_delete = set(current_packages) - set(unique_pkg_names)
+    except FileNotFoundError:
+        pass
+    else:
+        for to_delete_item in to_delete:
+            shutil.rmtree(destination_dir / to_delete_item)
+
+    ## Sync local cache
+    (env.dev_env_path / "local_cache" / config.profile).mkdir(
+            parents=True, exist_ok=True,
+        )
+    for package_full in component.ros_pkgs:
+        source_dir = \
+            env.dev_env_path / 'src' / 'ros_pkgs' / package_full
+        subprocess.run(
+                (
+                    f'rsync --checksum --archive --delete --copy-links  {source_dir} '
+                    f'{destination_dir}'
+                ), 
+                shell=True, 
+                check=True
+            )
+
+    # Build packages
+    packages_to_build = []
+    if args['packages_select'] is not None:
+        for pkg in args['packages_select']:
+            if pkg not in unique_pkg_names:
+                raise RobotDevBuildROSPkgsError(
+                        f'Package \'{pkg}\' not available for the component '
+                        f'\'{component.component}\''
+                    )
+            packages_to_build.append(pkg)
+
+    # Build        
+    if not is_component_local:
+        sync_component_data(config, component, env)
+
+    volumes = get_component_volumes(env, config, component)
+    
+    build_command = f'{ROBOT_GENERIC_STATIC_DATA_PATH}/scripts/build.ros.pkgs '
+    build_command += f'--packages-list {" ".join(unique_pkg_names)} '
+    if args['debug']:
+        build_command += f'--debug '
+    if packages_to_build:
+        build_command += f'--packages-to-build {" ".join(packages_to_build)} '
+
+    run_command_inside_container(
+            env=env, 
+            config=config, 
+            component=component,
+            command=build_command,
+            volumes=volumes,
+            ignore_command_error=True,
+        )
+
+
+def build_all_components():
+    profile, config, _ = get_dev_profile()
+    env = get_environment()
+
+    check_workspace(config)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--component', type=str, required=False)
+    parser.add_argument('--debug', action='store_true')
+    parser.add_argument('--packages-select', type=str, nargs='+', required=False)
+    args = dict(parser.parse_known_args()[0]._get_kwargs())
+    arg_component = args['component']
+
+    known_component = False
+    for component in profile.components:
+        if arg_component is None or arg_component==component.component:
+            print(f'📦📦  Component: {component.component}')
+            print()
+            try:
+                build_ros_packages_component(env, config, component, args)
+            except RobotDevBuildROSPkgsError as e:
+                if arg_component is not None:
+                    raise e
+                else:
+                    print(
+                            f'  🏃 Component \'{component.component}\' does '
+                            'not have ros packages, skipping...'
+                        )
+                    print()
+            known_component = True
+    
+    if not known_component:
+        raise RobotDevBuildROSPkgsError(
+                f'Unknown component \'{arg_component}\''
+            )
+
+
+if __name__ == "__main__":
+    managed_main_execution(build_all_components)
+

@@ -1,0 +1,49 @@
+#!/usr/bin/python3
+import subprocess
+import argparse
+
+from robotdevenv.component import RobotDevComponent
+from robotdevenv.robot import RobotDevRobot
+from robotdevenv.managed_main_execution import managed_main_execution
+
+from robotdevenv.environment import DEV_ENV_PATH
+
+
+class RobotDevBuildDockerError(Exception): pass
+
+
+def build_component():
+
+    parser = argparse.ArgumentParser()
+    robot = RobotDevRobot(parser)
+    component = RobotDevComponent(parser, robot)
+
+    print()
+    print('🤖🤖 UR ROBOT DEVELOPMENT ENVIRONMENT 🤖🤖')
+    print('  🦾 Build docker images 🦿')
+    print()
+    print(f'📦📦  Component: {component.full_name}')
+    print(f'🤖🤖      Robot: {robot.name}')
+    print()
+    print(f'🛠️  Building component image: \'{component.image_name}\'')
+    print(f'            from dockerfile: \'{component.dockerfile_path}\'')
+    print()
+
+    docker_build_command = (
+        f'cd {DEV_ENV_PATH} && '
+        f'docker build '
+        f'--tag {component.image_name} '
+        f'-f {component.dockerfile_path} '
+        '.'
+    )
+
+    subprocess.run(
+        docker_build_command, 
+        shell=True, 
+        check=True,
+    )
+    print()
+
+
+if __name__ == "__main__":
+    managed_main_execution(build_component)

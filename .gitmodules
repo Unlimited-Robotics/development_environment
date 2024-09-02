@@ -1,0 +1,18 @@
+[submodule "src/ros_pkgs/third_party/rclpy"]
+	path = src/ros_pkgs/third_party/rclpy
+	url = git@github.com:Unlimited-Robotics/third_party_rclpy.git
+[submodule "src/ros_pkgs/third_party/launch_ros"]
+	path = src/ros_pkgs/third_party/launch_ros
+	url = git@github.com:Unlimited-Robotics/third_party_launch_ros.git
+[submodule "src/ros_pkgs/third_party/launch"]
+	path = src/ros_pkgs/third_party/launch
+	url = git@github.com:Unlimited-Robotics/third_party_launch.git
+[submodule "src/ros_pkgs/third_party/ros2cli"]
+	path = src/ros_pkgs/third_party/ros2cli
+	url = git@github.com:Unlimited-Robotics/third_party_ros2cli.git
+[submodule "src/ros_pkgs/third_party/image_pipeline"]
+	path = src/ros_pkgs/third_party/image_pipeline
+	url = git@github.com:Unlimited-Robotics/third_party_image_pipeline.git
+[submodule "src/ros_pkgs/third_party/usb_cam"]
+	path = src/ros_pkgs/third_party/usb_cam
+	url = git@github.com:Unlimited-Robotics/third_party_usb_cam.git
