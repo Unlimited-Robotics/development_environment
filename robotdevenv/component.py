@@ -89,24 +89,24 @@ class RobotDevComponent:
     def get_volumes(self):
 
         if self.__robot.is_local:
-            dir_host_env_path = DEV_ENV_PATH
+            dir_host_ws_path = DEV_ENV_PATH
         else:
-            dir_host_env_path = get_remote_dev_directory(config, component)
+            dir_host_ws_path = get_remote_dev_directory(config, component)
         ## General build folder
         dir_host_build_base = \
-            dir_host_env_path / 'build' / self.name
+            dir_host_ws_path / 'build' / self.name
         ## Generic static data folder
         dir_host_generic_static_data = \
-            dir_host_env_path / 'generic_static_data'
+            dir_host_ws_path / 'generic_static_data'
         ## Generic persistent data folder
         dir_host_generic_persistent_data = \
-            dir_host_env_path / 'generic_persistent_data'
+            dir_host_ws_path / 'generic_persistent_data'
         ## Component static data folder
         dir_host_component_static_data = \
             self.folder_path / 'component_static_data'
         ## Component persistent data folder
         dir_host_component_persistent_data = \
-            dir_host_env_path / 'component_persistent_data' / self.full_name
+            dir_host_ws_path / 'component_persistent_data' / self.full_name
 
         volumes = [
                 (dir_host_build_base, ROBOT_BUILD_PATH),
@@ -118,7 +118,7 @@ class RobotDevComponent:
             
         if self.src:
             for src_component in self.src:
-                dir_host_src_component = dir_host_env_path / 'src' / src_component
+                dir_host_src_component = dir_host_ws_path / 'src' / src_component
                 volumes.append(
                     (dir_host_src_component, f'{ROBOT_SRC_PATH}/{src_component}', 'ro'),
                 )   

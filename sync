@@ -1,38 +1,33 @@
 #!/usr/bin/python3
 import argparse
 
-from robotdevenv.profile import get_dev_profile
-from robotdevenv.profile import RobotDevComponent, RobotDevLocalConfig
-from robotdevenv.environment import get_environment, RobotDevEnvironment
-from robotdevenv.sync import sync_component_data, check_workspace
-from robotdevenv.managed_main_execution import managed_main_execution
+from robotdevenv.component import RobotDevComponent as Component
+from robotdevenv.robot import RobotDevRobot as Robot
+from robotdevenv.sync import RobotDevSyncHandler as SyncHandler
 
 
-class RobotDevBuildROSPkgsError(Exception): pass
+class RobotDevSyncError(Exception): pass
 
 
-print()
+def sync_component():
+    
+    parser = argparse.ArgumentParser()
+    robot = Robot(parser)
+    component = Component(parser, robot)
+    
+    print()
+    print('🤖🤖 UR ROBOT DEVELOPMENT ENVIRONMENT 🤖🤖')
+    print('  🦾 Sync Environment 🦿')
+    print()
+    print(f'📦📦  Component: {component.full_name}')
+    print(f'🤖🤖      Robot: {robot.name}')
+    print()
 
-print('🤖🤖 UR ROBOT DEVELOPMENT ENVIRONMENT 🤖🤖')
-print('  🦾 Sync Environment 🦿')
-print()
+    if robot.is_local:
+        raise RobotDevSyncError('Robot is localhost, nothing to synchronize.')
 
-
-def sync_component(
-            config: RobotDevLocalConfig,
-            env: RobotDevEnvironment,
-            component: RobotDevComponent,
-        ):
-    is_component_local = component.host_ip == 'localhost'
-
-    # Build
-
-    ## Set development path
-    if is_component_local:
-        print('  Local component, skipping...')
-        print()
-    else:
-        sync_component_data(config, component, env)
+    SyncHandler.sync_to_robot(component, robot)
+    
 
 
 def sync_all_components():
@@ -56,12 +51,11 @@ def sync_all_components():
             known_component = True
     
     if not known_component:
-        raise RobotDevBuildROSPkgsError(
+        raise RobotDevSyncError(
                 f'Unknown component \'{arg_component}\''
             )
 
 
 
 if __name__ == "__main__":
-    managed_main_execution(sync_all_components)
-
+    sync_component()

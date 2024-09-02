@@ -1,6 +1,7 @@
 import argparse
 import yaml
 
+from robotdevenv.ssh import RobotDevSSHHandler as SSHHandler
 from robotdevenv.environment import DEV_ENV_PATH
 
 
@@ -23,9 +24,6 @@ class RobotDevRobot:
 
         if is_local:
             platform = LOCALHOST_DEFAULT_PLATFORM
-            ip = None
-            port = None
-            user = None
         else:
             robots_host_info_file_path = DEV_ENV_PATH / ROBOTS_INFO_FILE_NAME
 
@@ -47,9 +45,6 @@ class RobotDevRobot:
             
             try:
                 platform = robot_host_info['platform']
-                ip = robot_host_info['ip']
-                port = robot_host_info['port']
-                user = robot_host_info['user']
             except KeyError as field:
                 raise RobotDevRobotError(
                     f'Field \'{field}\' not found for robot \'{name}\' in '
@@ -60,6 +55,11 @@ class RobotDevRobot:
         self.name = name
         self.is_local = is_local
         self.platform = platform
-        self.ip = ip
-        self.port = port
-        self.user = user
+
+
+    def get_remote_home(self):
+        output = SSHHandler.run_remote_get_output(
+            host_alias=self.name,
+            command='ls',
+        )
+        print(output)
