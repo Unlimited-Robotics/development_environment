@@ -1,5 +1,6 @@
-import argparse
 import yaml
+import pathlib
+import argparse
 
 from robotdevenv.ssh import RobotDevSSHHandler as SSHHandler
 from robotdevenv.environment import DEV_ENV_PATH
@@ -58,8 +59,7 @@ class RobotDevRobot:
 
 
     def get_remote_home(self):
-        output = SSHHandler.run_remote_get_output(
+        return pathlib.Path(SSHHandler.run_remote_get_output(
             host_alias=self.name,
-            command='ls',
-        )
-        print(output)
+            command='echo \'$HOME\'',
+        ))
