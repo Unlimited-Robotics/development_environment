@@ -43,10 +43,14 @@ build_command = (
 if args.debug:
     build_command += f'  --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo'
 
-if (args.packages_to_build is not None) and args.packages_to_build:
+if args.packages_to_build:
     build_command += f'  --packages-select {" ".join(args.packages_to_build)} '
+else:
+    build_command += f'  --packages-select {" ".join(args.packages_list)} '
 
 # build_command += '--allow-overriding launch launch_ros rclpy ros2run depth_image_proc '
+
+print(build_command)
 
 run_bash_command(
     command=build_command,

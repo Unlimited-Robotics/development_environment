@@ -10,7 +10,7 @@ ROBOT_BASE_PATH = pathlib.Path(os.environ['ROBOT_BASE_PATH'])
 ## Container src path
 DIR_SRC = ROBOT_BASE_PATH / 'src'
 ## Container ros packages source code
-DIR_ROS_SRC = DIR_SRC / 'ros_pkgs'
+DIR_ROS_SRC = DIR_SRC
 ## Container general build folder
 DIR_BUILD_BASE = ROBOT_BASE_PATH / 'build'
 ## Container generic data folder

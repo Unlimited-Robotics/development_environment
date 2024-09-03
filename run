@@ -27,13 +27,10 @@ def run_command():
     print(f'🤖🤖      Robot: {robot.name}')
     print()
 
-    # check_workspace(config, only_warning=True)
-
     parser.add_argument('-d', '--detach', action='store_true')
     parser.add_argument('-s', '--sync', action='store_true')
     args = dict(parser.parse_known_args()[0]._get_kwargs())
     arg_detach = args['detach']
-    arg_sync = args['sync']
 
     command_args = parser.parse_known_args()[1]
     if command_args:
@@ -45,12 +42,11 @@ def run_command():
         print(f'🦿  Command to run: \'{command}\'')
         print()
 
-    if arg_sync and not robot.is_local:
+    if args['sync'] and not robot.is_local:
         sync_handler.sync_to_robot()
 
     run_handler.run_command(command, interactive=True)
 
 
 if __name__ == "__main__":
-    # run_command()
     managed_main_execution(run_command)
