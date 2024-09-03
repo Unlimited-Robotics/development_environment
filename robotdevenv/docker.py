@@ -1,4 +1,5 @@
 import subprocess
+import json
 from typing import List, Dict
 
 from robotdevenv.component import RobotDevComponent as Component
@@ -40,6 +41,26 @@ class RobotDevDockerHandler(Singleton):
             check=True,
         )
         print()
+
+
+    def get_running_container_info(self):
+        docker_command = ''
+        if not self.__robot.is_local:
+            docker_command += f'DOCKER_HOST=ssh://{self.__robot.name} \\\n'
+        docker_command += "docker inspect " 
+        docker_command += self.__component.container_name
+
+        try:
+            process = subprocess.run(
+                docker_command,
+                shell=True, 
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            return json.loads(process.stdout)[0]
+        except subprocess.CalledProcessError:
+            return None
 
 
     def run_command(self,
@@ -114,13 +135,49 @@ class RobotDevDockerHandler(Singleton):
             volume_str = [str(s) for s in volume]
             docker_command += f'  -v={":".join(volume_str)} \\\n'
 
+        # Image
+        docker_command += f'  {self.__component.image_name} \\\n'
+
         # Command
         docker_command += f'  \\\n{command}\\\n \\\n'
 
+        try:
+            subprocess.run(
+                docker_command, 
+                shell=True, 
+                check=True,
+            )
+        except subprocess.CalledProcessError as e:
+            if not interactive:
+                raise e
+
+
+    def exec_command(self,
+                command: str,
+                interactive=False,
+            ):
+
+        docker_command = ''
+
+        if not self.__robot.is_local:
+            docker_command += f'DOCKER_HOST=ssh://{self.__robot.name} \\\n'
+
+        docker_command += 'docker exec '
+
+        if interactive:
+            docker_command += '-it '
+
+        docker_command += f'{self.__component.container_name} {command}'
+
         print(docker_command)
 
-        subprocess.run(
-            docker_command, 
-            shell=True, 
-            check=True,
-        )
+        try:
+            subprocess.run(
+                docker_command, 
+                shell=True, 
+                check=True,
+            )
+        except subprocess.CalledProcessError as e:
+            if not interactive:
+                raise e
+

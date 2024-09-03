@@ -52,5 +52,5 @@ def run_command():
 
 
 if __name__ == "__main__":
-    run_command()
-    # managed_main_execution(run_command)
+    # run_command()
+    managed_main_execution(run_command)
