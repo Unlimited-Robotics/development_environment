@@ -87,9 +87,8 @@ class RobotDevDockerHandler(Singleton):
                 '  --network=host \\\n'
                 '  --pid=host \\\n'
             )
-            
 
-        if not self.__robot.platform == 'jetsonorinagx':
+        if self.__robot.platform == 'jetsonorinagx':
             docker_command += '  --runtime nvidia \\\n'
 
         docker_command += f'  --name {self.__component.container_name}\\\n'
