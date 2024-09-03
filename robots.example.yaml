@@ -1,17 +1,5 @@
-GARY12:
-  host_ip: 192.168.12.100
-  ssh_port: 22
-  host_user: gary
-  platform: jetsonorinagx
+GARY012:
+  platform: jetsonorin
 
-GARY11:
-  host_ip: 192.168.12.12
-  ssh_port: 22
-  host_user: gary
-  platform: jetsonorinagx
-
-MINIGARY:
-  host_ip: 192.168.12.115
-  ssh_port: 22
-  host_user: gary
-  platform: jetsonorinagx
+GARY011:
+  platform: jetsonorin
