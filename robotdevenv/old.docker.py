@@ -195,7 +195,7 @@ def run_command_inside_container(
 
         docker_command = set_env_file(
                 pathlib.Path('profiles') / config.profile / 'env',
-                env=env, path_dir_env=path_dir_env, 
+                env=env, path_dir_env=path_dir_env,
                 docker_command=docker_command, env_vars=env_vars,
             )
 
@@ -248,7 +248,7 @@ def run_command_inside_container(
             volume_str = [str(s) for s in volume]
             docker_command += f'  -v={":".join(volume_str)} \\\n'
         # Check if commands folder available
-        if (env.dev_env_path / 'components'/ component.component / 'commands').is_dir():
+        if (env.dev_env_path / 'components' / component.component / 'commands').is_dir():
             docker_command += f'  -v={path_dir_env/"components"/component.component/"commands"}:{ROBOT_COMMANDS_PATH}'
 
         # Create file for local execution

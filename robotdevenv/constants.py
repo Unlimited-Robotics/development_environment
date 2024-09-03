@@ -1,19 +1,29 @@
 import pathlib
 
+# GENERAL
 ROBOT_NAME = 'gary'
 
+# DOCKER
 DOCKER_REPOSITORY = 'unlimitedrobotics'
 DOCKER_IMAGE = ROBOT_NAME
-
-# DOCKER IMAGES
-
 IMAGE_NAME_TEMPLATE = (
-        f'{DOCKER_REPOSITORY}/{DOCKER_IMAGE}'
-        '.{platform}.{repo}.{component}:{version}'
-    )
+    f'{DOCKER_REPOSITORY}/{DOCKER_IMAGE}'
+    '.{platform}.{repo}.{component}:{version}'
+)
+CONTAINER_NAME_TEMPLATE = (
+    '{repo}.{component}'
+)
 
-# DIRECTORIES
+# GENERIC
+FOLDER_SRC = 'src'
+FOLDER_CONFIG = 'config'
+FOLDER_COMMANDS = 'commands'
 
+# LOCAL
+DEV_ENV_PATH = pathlib.Path(__file__).resolve().parent.parent
+FILE_ROS_DOMAINS_PATH = DEV_ENV_PATH / 'users_ros_domains.yaml'
+
+# ROBOT (INSIDE CONTAINER)
 ROBOT_BASE_PATH = pathlib.Path('/robot')
 ROBOT_COMMANDS_PATH = ROBOT_BASE_PATH / 'commands'
 ROBOT_GENERIC_STATIC_DATA_PATH = ROBOT_BASE_PATH / 'generic_static_data'
@@ -21,13 +31,13 @@ ROBOT_GENERIC_PERSISTENT_DATA_PATH = ROBOT_BASE_PATH / 'generic_persistent_data'
 ROBOT_COMPONENT_STATIC_DATA_PATH = ROBOT_BASE_PATH / 'component_static_data'
 ROBOT_COMPONENT_PERSISTENT_DATA_PATH = ROBOT_BASE_PATH / 'component_persistent_data'
 ROBOT_PROFILE_STATIC_DATA_PATH = ROBOT_BASE_PATH / 'profile_static_data'
-ROBOT_CONFIG_PATH = ROBOT_BASE_PATH / 'config'
+ROBOT_CONFIG_PATH = ROBOT_BASE_PATH / FOLDER_CONFIG
 ROBOT_BUILD_PATH = ROBOT_BASE_PATH / 'build'
-ROBOT_SRC_PATH = ROBOT_BASE_PATH / 'src'
+ROBOT_SRC_PATH = ROBOT_BASE_PATH / FOLDER_SRC
 ROBOT_ROS_PKGS_PATH = ROBOT_SRC_PATH / 'ros_pkgs'
 
+# REMOTE HOST 
 REMOTE_HOST_WORKSPACES_FOLDER_NAME = 'dev_workspaces'
 
 # ENVIRONMENT VARIABLES
-
-ENV_CONFIG_PATH = 'ROBOT_CONFIGURATION_PATH'
+# ENV_CONFIG_PATH = 'ROBOT_CONFIGURATION_PATH'

@@ -14,6 +14,7 @@ def sync_component():
     parser = argparse.ArgumentParser()
     robot = Robot(parser)
     component = Component(parser, robot)
+    sync_handler = SyncHandler(component, robot)
     
     print()
     print('🤖🤖 UR ROBOT DEVELOPMENT ENVIRONMENT 🤖🤖')
@@ -26,35 +27,7 @@ def sync_component():
     if robot.is_local:
         raise RobotDevSyncError('Robot is localhost, nothing to synchronize.')
 
-    SyncHandler.sync_to_robot(component, robot)
-    
-
-
-def sync_all_components():
-    profile, config, _ = get_dev_profile()
-    env = get_environment()
-
-    check_workspace(config)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--component', type=str, required=False)
-    args = dict(parser.parse_known_args()[0]._get_kwargs())
-    arg_component = args['component']
-
-    known_component = False
-    
-    for component in profile.components:
-        if arg_component is None or arg_component==component.component:
-            print(f'📦📦  Component: {component.component}')
-            print()
-            sync_component(config, env, component)
-            known_component = True
-    
-    if not known_component:
-        raise RobotDevSyncError(
-                f'Unknown component \'{arg_component}\''
-            )
-
+    sync_handler.sync_to_robot()
 
 
 if __name__ == "__main__":

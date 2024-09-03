@@ -4,7 +4,7 @@ import subprocess
 class RobotDevGitError(Exception): pass
 
 
-class RobotDevGitHandler():
+class RobotDevGitHandler:
 
     def get_email():
         try:

@@ -2,26 +2,30 @@ import argparse
 import yaml
 
 from robotdevenv.robot import RobotDevRobot
+from robotdevenv.singleton import Singleton
 
-from robotdevenv.environment import DEV_ENV_PATH
+from robotdevenv.constants import DEV_ENV_PATH
 from robotdevenv.constants import IMAGE_NAME_TEMPLATE
+from robotdevenv.constants import CONTAINER_NAME_TEMPLATE
 from robotdevenv.constants import ROBOT_GENERIC_STATIC_DATA_PATH
 from robotdevenv.constants import ROBOT_GENERIC_PERSISTENT_DATA_PATH
 from robotdevenv.constants import ROBOT_COMPONENT_STATIC_DATA_PATH
 from robotdevenv.constants import ROBOT_COMPONENT_PERSISTENT_DATA_PATH
 from robotdevenv.constants import ROBOT_BUILD_PATH
 from robotdevenv.constants import ROBOT_SRC_PATH
+from robotdevenv.constants import FOLDER_SRC
 
 
 class RobotDevComponentError(Exception): pass
 
 
-class RobotDevComponent:
+class RobotDevComponent(Singleton):
 
     def __init__(self, 
                 parser:argparse.ArgumentParser,
                 robot:RobotDevRobot
             ):
+        
         parser.add_argument('-c', '--component', type=str, required=True)
         args = dict(parser.parse_known_args()[0]._get_kwargs())
         full_name = args['component']
@@ -34,8 +38,8 @@ class RobotDevComponent:
                 'the format \'<repo>/<component>\'.'
             )
         
-        folder_path = DEV_ENV_PATH / 'src' / repo / 'components' / name
-        component_desc_path = folder_path / f'{name}.yaml'
+        local_path = DEV_ENV_PATH / FOLDER_SRC / repo / 'components' / name
+        component_desc_path = local_path / f'{name}.yaml'
 
         try:
             with open(component_desc_path, 'r') as file:
@@ -57,7 +61,22 @@ class RobotDevComponent:
         else:
             ros_pkgs = []
 
-        dockerfile_path = folder_path / 'dockerfiles' / \
+        if 'display' in component_desc:
+            display = component_desc['display']
+        else:
+            display = False
+
+        if 'sound' in component_desc:
+            sound = component_desc['sound']
+        else:
+            sound = False
+
+        if 'devices' in component_desc:
+            devices = component_desc['devices']
+        else:
+            devices = False
+
+        dockerfile_path = local_path / 'dockerfiles' / \
             f'{robot.platform}.dockerfile'
         if not dockerfile_path.is_file():
             raise RobotDevComponentError(
@@ -71,6 +90,14 @@ class RobotDevComponent:
             version=version,
         )
 
+        container_name = CONTAINER_NAME_TEMPLATE.format(
+            repo=repo,
+            component=name,
+        )
+
+        host_path = \
+            robot.get_host_ws_path() / FOLDER_SRC / repo / 'components' / name
+
         # Private attributes
         self.__robot = robot
 
@@ -78,35 +105,33 @@ class RobotDevComponent:
         self.full_name = full_name
         self.repo = repo
         self.name = name
-        self.folder_path = folder_path
+        self.local_path = local_path
+        self.host_path = host_path
         self.version = version
         self.src = src
         self.ros_pkgs = ros_pkgs
+        self.display = display
+        self.sound = sound
+        self.devices = devices
         self.dockerfile_path = dockerfile_path
         self.image_name = image_name
+        self.container_name = container_name
 
 
     def get_volumes(self):
 
-        if self.__robot.is_local:
-            dir_host_ws_path = DEV_ENV_PATH
-        else:
-            dir_host_ws_path = get_remote_dev_directory(config, component)
+        host_ws_path = self.__robot.get_host_ws_path()
+
         ## General build folder
-        dir_host_build_base = \
-            dir_host_ws_path / 'build' / self.name
+        dir_host_build_base = host_ws_path / 'build' / self.full_name
         ## Generic static data folder
-        dir_host_generic_static_data = \
-            dir_host_ws_path / 'generic_static_data'
+        dir_host_generic_static_data = host_ws_path / 'generic_static_data'
         ## Generic persistent data folder
-        dir_host_generic_persistent_data = \
-            dir_host_ws_path / 'generic_persistent_data'
+        dir_host_generic_persistent_data = host_ws_path / 'generic_persistent_data'
         ## Component static data folder
-        dir_host_component_static_data = \
-            self.folder_path / 'component_static_data'
+        dir_host_component_static_data = self.host_path / 'component_static_data'
         ## Component persistent data folder
-        dir_host_component_persistent_data = \
-            dir_host_ws_path / 'component_persistent_data' / self.full_name
+        dir_host_component_persistent_data = host_ws_path / 'component_persistent_data' / self.full_name
 
         volumes = [
                 (dir_host_build_base, ROBOT_BUILD_PATH),
@@ -118,7 +143,7 @@ class RobotDevComponent:
             
         if self.src:
             for src_component in self.src:
-                dir_host_src_component = dir_host_ws_path / 'src' / src_component
+                dir_host_src_component = host_ws_path / 'src' / src_component
                 volumes.append(
                     (dir_host_src_component, f'{ROBOT_SRC_PATH}/{src_component}', 'ro'),
                 )   

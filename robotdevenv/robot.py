@@ -3,7 +3,10 @@ import pathlib
 import argparse
 
 from robotdevenv.ssh import RobotDevSSHHandler as SSHHandler
-from robotdevenv.environment import DEV_ENV_PATH
+from robotdevenv.git import RobotDevGitHandler as GitHandler
+from robotdevenv.singleton import Singleton
+from robotdevenv.constants import DEV_ENV_PATH
+from robotdevenv.constants import REMOTE_HOST_WORKSPACES_FOLDER_NAME
 
 
 LOCALHOST_DEFAULT_PLATFORM = 'x86_64'
@@ -13,7 +16,7 @@ ROBOTS_INFO_FILE_NAME = 'robots.yaml'
 class RobotDevRobotError(Exception): pass
 
 
-class RobotDevRobot:
+class RobotDevRobot(Singleton):
 
     def __init__(self, 
                 parser:argparse.ArgumentParser
@@ -53,13 +56,29 @@ class RobotDevRobot:
                 )
         
         # Public attributes
+        self.ssh_handler = SSHHandler(name)
         self.name = name
         self.is_local = is_local
         self.platform = platform
 
 
-    def get_remote_home(self):
-        return pathlib.Path(SSHHandler.run_remote_get_output(
-            host_alias=self.name,
+    def get_remote_home(self) -> pathlib.Path:
+        command_output:str = self.ssh_handler.run_remote(
             command='echo \'$HOME\'',
-        ))
+            get_output=True,
+        )
+        command_output = command_output.replace('\n','')
+        return pathlib.Path(command_output)
+    
+    
+    def get_default_ws_name(self):
+        return GitHandler.get_email().split('@')[0]
+
+
+    def get_host_ws_path(self):
+        if self.is_local:
+            return DEV_ENV_PATH
+        else:
+            return self.get_remote_home() / \
+                   REMOTE_HOST_WORKSPACES_FOLDER_NAME / \
+                   self.get_default_ws_name()

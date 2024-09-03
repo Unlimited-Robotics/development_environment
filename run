@@ -3,6 +3,9 @@ import argparse
 
 from robotdevenv.component import RobotDevComponent as Component
 from robotdevenv.robot import RobotDevRobot as Robot
+from robotdevenv.sync import RobotDevSyncHandler as SyncHandler
+from robotdevenv.run import RobotDevRunHandler as RunHandler
+from robotdevenv.managed_main_execution import managed_main_execution
 
 
 class RobotDevRunError(Exception): pass
@@ -13,6 +16,8 @@ def run_command():
     parser = argparse.ArgumentParser()
     robot = Robot(parser)
     component = Component(parser, robot)
+    sync_handler = SyncHandler(component, robot)
+    run_handler = RunHandler(component, robot)
 
     print()
     print('🤖🤖 UR ROBOT DEVELOPMENT ENVIRONMENT 🤖🤖')
@@ -25,8 +30,10 @@ def run_command():
     # check_workspace(config, only_warning=True)
 
     parser.add_argument('-d', '--detach', action='store_true')
+    parser.add_argument('-s', '--sync', action='store_true')
     args = dict(parser.parse_known_args()[0]._get_kwargs())
     arg_detach = args['detach']
+    arg_sync = args['sync']
 
     command_args = parser.parse_known_args()[1]
     if command_args:
@@ -38,22 +45,12 @@ def run_command():
         print(f'🦿  Command to run: \'{command}\'')
         print()
 
-    volumes = component.get_volumes()
+    if arg_sync and not robot.is_local:
+        sync_handler.sync_to_robot()
 
-    for volume in volumes:
-        print(volume)
-
-    # run_command_inside_container(
-    #         env=env,
-    #         config=config, 
-    #         component=component, 
-    #         command=command,
-    #         volumes=volumes,
-    #         interactive=not arg_detach,
-    #         detached_mode=arg_detach,
-    #         ignore_command_error=True,
-    #     )
+    run_handler.run_command(command, interactive=True)
 
 
 if __name__ == "__main__":
     run_command()
+    # managed_main_execution(run_command)

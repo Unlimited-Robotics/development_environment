@@ -15,6 +15,7 @@ def build_component():
     parser = argparse.ArgumentParser()
     robot = Robot(parser)
     component = Component(parser, robot)
+    docker_handler = DockerHandler(component, robot)
 
     print()
     print('🤖🤖 UR ROBOT DEVELOPMENT ENVIRONMENT 🤖🤖')
@@ -27,7 +28,7 @@ def build_component():
     print(f'            from dockerfile: \'{component.dockerfile_path}\'')
     print()
 
-    DockerHandler.build_image(component, robot)
+    docker_handler.build_image()
 
 
 if __name__ == "__main__":
