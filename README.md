@@ -1,10 +1,1 @@
-## Clone the first time
-
-```
-cd ~/ur_dev/
-git clone https://github.com/Unlimited-Robotics/development_environment devenv
-```
-
-## References
-
-https://answers.ros.org/question/358453/ros2-docker-multiple-hosts/
+Go to: https://www.notion.so/Gary-s-Development-Environment-4-0-beta-b45b5a316f7c4371b251fcc0a67c852f
