@@ -152,6 +152,8 @@ class RobotDevRunHandler(Singleton):
         else:
             running_image = container_info['Config']['Image']
             if running_image == self.__component.image_name:
+                if not command:
+                    command = 'bash'
                 print(
                     f'ℹ️  Container \'{self.__component.container_name}\' already running, '
                     f'executing \'{command}\' inside it\n'

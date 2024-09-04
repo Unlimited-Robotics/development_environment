@@ -168,8 +168,6 @@ class RobotDevDockerHandler(Singleton):
 
         docker_command += f'{self.__component.container_name} {command}'
 
-        print(docker_command)
-
         try:
             subprocess.run(
                 docker_command, 
