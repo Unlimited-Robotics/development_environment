@@ -50,7 +50,7 @@ else:
 
 # build_command += '--allow-overriding launch launch_ros rclpy ros2run depth_image_proc '
 
-print(build_command)
+# print(build_command)
 
 run_bash_command(
     command=build_command,
