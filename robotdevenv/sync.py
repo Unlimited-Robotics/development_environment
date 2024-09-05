@@ -21,7 +21,7 @@ class RobotDevSyncHandler(Singleton):
             ):
         self.__component = component
         self.__robot = robot
-    
+
 
     def sync_to_robot(self):
         print(f'🔁💻 Synchronizing to remote host \'{self.__robot.name}\'...')

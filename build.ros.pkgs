@@ -49,8 +49,6 @@ def build_ros_packages_component():
     if args['packages_select'] is not None:
         build_command += f'--packages-to-build {" ".join(args["packages_select"])} '
 
-    print(build_command)
-
     if not robot.is_local:
         sync_handler.sync_to_robot()
 

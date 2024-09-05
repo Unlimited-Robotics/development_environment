@@ -120,6 +120,11 @@ class RobotDevDockerHandler(Singleton):
             docker_command +=  '  -e PULSE_COOKIE=/root/.config/pulse/cookie \\\n'
             docker_command +=  '  -v ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native \\\n'
             docker_command +=  f'  -v {self.__robot.get_remote_home()}/.config/pulse/cookie:/root/.config/pulse/cookie \\\n'
+
+        # Devices
+        if self.__component.devices:
+            docker_command +=  '  -v /dev:/dev \\\n'
+            docker_command +=  '  -v /run/udev:/run/udev:ro \\\n'
         
         # Env Files
         for env_file in env_files:
