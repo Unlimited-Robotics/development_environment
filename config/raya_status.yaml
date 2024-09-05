@@ -1,6 +1,0 @@
-# cat /opt/raya_os/config/raya_status.yaml 
-critically_low_battery_threshold: 0.1
-low_battery_threshold: 0.3
-charged_battery_threshold: 0.5
-
-fake_docking: true
