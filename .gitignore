@@ -16,3 +16,7 @@ robots.yaml
 
 /src/**
 !/src/.gitkeep
+
+/config/*
+!/config/env/
+!/config/env/**
