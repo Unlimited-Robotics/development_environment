@@ -1,6 +1,7 @@
 import pathlib
 
 # GENERAL
+COMPANY_NAME = 'ur'
 ROBOT_NAME = 'gary'
 
 # DOCKER
@@ -23,6 +24,10 @@ FOLDER_GENERIC_STATIC_DATA = 'generic_static_data'
 # LOCAL
 DEV_ENV_PATH = pathlib.Path(__file__).resolve().parent.parent
 FILE_ROS_DOMAINS_PATH = DEV_ENV_PATH / 'users_ros_domains.yaml'
+
+# GLOBAL
+GLOBAL_BASE_PATH = pathlib.Path('/opt') / COMPANY_NAME / ROBOT_NAME
+GLOBAL_CONFIG_PATH = GLOBAL_BASE_PATH / FOLDER_CONFIG
 
 # ROBOT (INSIDE CONTAINER)
 ROBOT_BASE_PATH = pathlib.Path('/robot')

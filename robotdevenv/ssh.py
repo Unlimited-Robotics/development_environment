@@ -52,7 +52,6 @@ class RobotDevSSHHandler(Singleton):
             ):
         rsync_command = (
             'rsync '
-            '--copy-links '
             '--checksum --archive --verbose --stats --delete '
             f'{origin_path} '
             f'{self.__host_alias}:{destination_path}'

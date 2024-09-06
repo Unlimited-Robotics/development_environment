@@ -29,6 +29,7 @@ def run_command():
 
     parser.add_argument('-d', '--detach', action='store_true')
     parser.add_argument('-s', '--sync', action='store_true')
+    parser.add_argument('--config', type=str)
     args = dict(parser.parse_known_args()[0]._get_kwargs())
     arg_detach = args['detach']
 
@@ -45,7 +46,11 @@ def run_command():
     if args['sync'] and not robot.is_local:
         sync_handler.sync_to_robot()
 
-    run_handler.run_command(command, interactive=True)
+    run_handler.run_command(
+        command=command, 
+        interactive=True,
+        config_origin=args['config'],
+    )
 
 
 if __name__ == "__main__":
