@@ -1,7 +1,3 @@
-RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-ROS_LOCALHOST_ONLY=1
-CYCLONEDDS_URI=file:///robot/generic_static_data/dds_profiles/cyclonedds_only_localhost.xml
-
 ROBOT_SERIAL=SIMULATOR001
 ROBOT_ID=SIMULATOR001
 CLIENT_ID=Temple_University_Hospital
