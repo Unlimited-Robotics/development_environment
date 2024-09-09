@@ -1,6 +1,4 @@
 #!/usr/bin/python3
-import subprocess
-import shutil
 import argparse
 
 from robotdevenv.component import RobotDevComponent as Component
@@ -9,7 +7,7 @@ from robotdevenv.sync import RobotDevSyncHandler as SyncHandler
 from robotdevenv.run import RobotDevRunHandler as RunHandler
 from robotdevenv.managed_main_execution import managed_main_execution
 
-from robotdevenv.constants import ROBOT_GENERIC_STATIC_DATA_PATH
+from robotdevenv.constants import ROBOT_BASE_PATH
 
 
 class RobotDevBuildROSPkgsError(Exception): pass
@@ -42,7 +40,7 @@ def build_ros_packages_component():
                 'packages to build'
             )
 
-    build_command = f'{ROBOT_GENERIC_STATIC_DATA_PATH}/scripts/build.ros.pkgs '
+    build_command = f'{ROBOT_BASE_PATH}/scripts/build.ros.pkgs '
     if args['debug']:
         build_command += f'--debug '
     build_command += f'--packages-list {" ".join(component.ros_pkgs)} '

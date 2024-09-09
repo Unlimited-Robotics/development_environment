@@ -181,7 +181,7 @@ class RobotDevRunHandler(Singleton):
 
         else:
             running_image = container_info['Config']['Image']
-            if running_image == self.__component.image_name:
+            if running_image == self.__component.image_dev_name:
                 if not command:
                     command = 'bash'
                 print(
