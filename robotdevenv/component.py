@@ -94,6 +94,11 @@ class RobotDevComponent(Singleton):
                 f'Dockerfile: \'{dockerfile_path}\' not found.'
             )
         
+        dockerfile_prod_path = local_path / 'dockerfiles' / \
+            f'{robot.platform}.prod.dockerfile'
+        if not dockerfile_prod_path.is_file():
+            dockerfile_prod_path = None
+        
         image_dev_name = IMAGE_NAME_TEMPLATE.format(
             repo=repo,
             component=name,
@@ -133,6 +138,7 @@ class RobotDevComponent(Singleton):
         self.sound = sound
         self.devices = devices
         self.dockerfile_path = dockerfile_path
+        self.dockerfile_prod_path = dockerfile_prod_path
         self.image_dev_name = image_dev_name
         self.image_prod_name = image_prod_name
         self.container_name = container_name

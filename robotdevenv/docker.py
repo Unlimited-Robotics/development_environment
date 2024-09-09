@@ -19,7 +19,7 @@ class RobotDevDockerHandler(Singleton):
         self.__robot:Robot = robot
 
 
-    def build_image(self):
+    def build_dev_image(self):
         
         docker_build_context_path = self.__component.local_path
 
@@ -30,8 +30,34 @@ class RobotDevDockerHandler(Singleton):
 
         docker_build_command += (
             'docker build '
+            '--progress=plain '
             f'--tag {self.__component.image_dev_name} '
             f'-f {self.__component.dockerfile_path} '
+            f'{docker_build_context_path}'
+        )
+
+        subprocess.run(
+            docker_build_command, 
+            shell=True, 
+            check=True,
+        )
+        print()
+
+
+    def build_prod_image(self):
+        
+        docker_build_context_path = DEV_ENV_PATH / 'src'
+
+        docker_build_command = f'cd {DEV_ENV_PATH} && '
+
+        if not self.__robot.is_local:
+            docker_build_command += f'DOCKER_HOST=ssh://{self.__robot.name} '
+
+        docker_build_command += (
+            'docker build '
+            '--progress=plain '
+            f'--tag {self.__component.image_prod_name} '
+            f'-f {self.__component.dockerfile_prod_path} '
             f'{docker_build_context_path}'
         )
 

@@ -28,7 +28,7 @@ def build_component():
     print(f'            from dockerfile: \'{component.dockerfile_path}\'')
     print()
 
-    docker_handler.build_image()
+    docker_handler.build_dev_image()
 
 
 if __name__ == "__main__":
