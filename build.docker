@@ -24,7 +24,7 @@ def build_component():
     print(f'📦📦  Component: {component.full_name}')
     print(f'🤖🤖      Robot: {robot.name}')
     print()
-    print(f'🛠️  Building component image: \'{component.image_name}\'')
+    print(f'🛠️  Building component image: \'{component.image_dev_name}\'')
     print(f'            from dockerfile: \'{component.dockerfile_path}\'')
     print()
 

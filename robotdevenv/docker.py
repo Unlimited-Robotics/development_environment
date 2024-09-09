@@ -30,7 +30,7 @@ class RobotDevDockerHandler(Singleton):
 
         docker_build_command += (
             'docker build '
-            f'--tag {self.__component.image_name} '
+            f'--tag {self.__component.image_dev_name} '
             f'-f {self.__component.dockerfile_path} '
             f'{docker_build_context_path}'
         )
@@ -140,7 +140,7 @@ class RobotDevDockerHandler(Singleton):
             docker_command += f'  -v={":".join(volume_str)} \\\n'
 
         # Image
-        docker_command += f'  {self.__component.image_name} \\\n'
+        docker_command += f'  {self.__component.image_dev_name} \\\n'
 
         # Command
         docker_command += f'  \\\n{command}\\\n \\\n'

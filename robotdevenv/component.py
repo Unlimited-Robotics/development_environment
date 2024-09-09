@@ -38,9 +38,10 @@ class RobotDevComponent(Singleton):
                 'the format \'<repo>/<component>\'.'
             )
         
-        local_path = DEV_ENV_PATH / FOLDER_SRC / repo / 'components' / name
-        component_desc_path = local_path / f'{name}.yaml'
+        repo_path = DEV_ENV_PATH / FOLDER_SRC / repo
+        local_path = repo_path / 'components' / name
 
+        component_desc_path = local_path / f'{name}.yaml'
         try:
             with open(component_desc_path, 'r') as file:
                 component_desc = yaml.safe_load(file)
@@ -49,7 +50,17 @@ class RobotDevComponent(Singleton):
                 f'Profile description file \'{component_desc_path}\' not found.'
             )
         
-        version = component_desc['version']
+        repo_manifest_path = repo_path / 'manifest.yaml'
+        try:
+            with open(repo_manifest_path, 'r') as file:
+                repo_manifest = yaml.safe_load(file)
+        except FileNotFoundError:
+            raise RobotDevComponentError(
+                f'Profile description file \'{component_desc_path}\' not found.'
+            )
+        
+        version_prod = repo_manifest['version']
+        version_dev = version_prod.replace('.beta','') + '.dev'
         
         if 'src' in component_desc:
             src = component_desc['src']
@@ -83,11 +94,18 @@ class RobotDevComponent(Singleton):
                 f'Dockerfile: \'{dockerfile_path}\' not found.'
             )
         
-        image_name = IMAGE_NAME_TEMPLATE.format(
+        image_dev_name = IMAGE_NAME_TEMPLATE.format(
             repo=repo,
             component=name,
             platform=robot.platform,
-            version=version,
+            version=version_dev,
+        )
+
+        image_prod_name = IMAGE_NAME_TEMPLATE.format(
+            repo=repo,
+            component=name,
+            platform=robot.platform,
+            version=version_prod,
         )
 
         container_name = CONTAINER_NAME_TEMPLATE.format(
@@ -107,14 +125,16 @@ class RobotDevComponent(Singleton):
         self.name = name
         self.local_path = local_path
         self.host_path = host_path
-        self.version = version
+        self.version_dev = version_dev
+        self.version_prod = version_prod
         self.src = src
         self.ros_pkgs = ros_pkgs
         self.display = display
         self.sound = sound
         self.devices = devices
         self.dockerfile_path = dockerfile_path
-        self.image_name = image_name
+        self.image_dev_name = image_dev_name
+        self.image_prod_name = image_prod_name
         self.container_name = container_name
 
 
