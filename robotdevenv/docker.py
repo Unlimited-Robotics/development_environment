@@ -56,7 +56,6 @@ class RobotDevDockerHandler(Singleton):
 
         docker_build_command += (
             'docker build '
-            '--progress=plain '
             f'--tag {self.__component.image_prod_name} '
             f'-f {self.__component.dockerfile_prod_path} '
             f'{docker_build_context_path}'

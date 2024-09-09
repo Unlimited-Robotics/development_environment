@@ -6,11 +6,7 @@ ROBOT_NAME = 'gary'
 
 # DOCKER
 DOCKER_REPOSITORY = 'unlimitedrobotics'
-DOCKER_IMAGE = ROBOT_NAME
-IMAGE_NAME_TEMPLATE = (
-    f'{DOCKER_REPOSITORY}/{DOCKER_IMAGE}'
-    '.{platform}.{repo}.{component}:{version}'
-)
+
 CONTAINER_NAME_TEMPLATE = (
     '{repo}.{component}'
 )
