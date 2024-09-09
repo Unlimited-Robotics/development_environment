@@ -8,6 +8,7 @@ from robotdevenv.constants import DEV_ENV_PATH
 from robotdevenv.constants import FOLDER_SRC
 from robotdevenv.constants import FOLDER_CONFIG
 from robotdevenv.constants import FOLDER_GENERIC_STATIC_DATA
+from robotdevenv.constants import LOCAL_SRC_PATH
 
 
 class RobotDevSyncError(Exception): pass
@@ -39,7 +40,7 @@ class RobotDevSyncHandler(Singleton):
             print(
                 f'  ➡️  Synchronizing {FOLDER_SRC}/{src_component} ... ', end=''
             )
-            origin_path:pathlib.Path = DEV_ENV_PATH / FOLDER_SRC / src_component
+            origin_path:pathlib.Path = LOCAL_SRC_PATH / src_component
             if not origin_path.is_dir():
                 raise RobotDevSyncError(
                     f'Source component \'{src_component}\' does not exist. '

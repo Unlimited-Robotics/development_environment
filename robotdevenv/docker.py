@@ -7,6 +7,7 @@ from robotdevenv.robot import RobotDevRobot as Robot
 from robotdevenv.singleton import Singleton
 
 from robotdevenv.constants import DEV_ENV_PATH
+from robotdevenv.constants import FOLDER_SRC
 
 
 class RobotDevDockerHandler(Singleton):
@@ -46,7 +47,7 @@ class RobotDevDockerHandler(Singleton):
 
     def build_prod_image(self):
         
-        docker_build_context_path = DEV_ENV_PATH / 'src'
+        docker_build_context_path = DEV_ENV_PATH / FOLDER_SRC
 
         docker_build_command = f'cd {DEV_ENV_PATH} && '
 

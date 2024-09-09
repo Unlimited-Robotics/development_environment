@@ -4,7 +4,6 @@ import yaml
 from robotdevenv.robot import RobotDevRobot
 from robotdevenv.singleton import Singleton
 
-from robotdevenv.constants import DEV_ENV_PATH
 from robotdevenv.constants import IMAGE_NAME_TEMPLATE
 from robotdevenv.constants import CONTAINER_NAME_TEMPLATE
 from robotdevenv.constants import ROBOT_GENERIC_STATIC_DATA_PATH
@@ -14,6 +13,12 @@ from robotdevenv.constants import ROBOT_COMPONENT_PERSISTENT_DATA_PATH
 from robotdevenv.constants import ROBOT_BUILD_PATH
 from robotdevenv.constants import ROBOT_SRC_PATH
 from robotdevenv.constants import FOLDER_SRC
+from robotdevenv.constants import FOLDER_BUILD
+from robotdevenv.constants import FOLDER_GENERIC_PERSISTENT_DATA
+from robotdevenv.constants import FOLDER_COMPONENT_STATIC_DATA
+from robotdevenv.constants import FOLDER_GENERIC_STATIC_DATA
+from robotdevenv.constants import FOLDER_COMPONENT_PERSISTENT_DATA
+from robotdevenv.constants import LOCAL_SRC_PATH
 
 
 class RobotDevComponentError(Exception): pass
@@ -38,7 +43,7 @@ class RobotDevComponent(Singleton):
                 'the format \'<repo>/<component>\'.'
             )
         
-        repo_path = DEV_ENV_PATH / FOLDER_SRC / repo
+        repo_path = LOCAL_SRC_PATH / repo
         local_path = repo_path / 'components' / name
 
         component_desc_path = local_path / f'{name}.yaml'
@@ -149,15 +154,15 @@ class RobotDevComponent(Singleton):
         host_ws_path = self.__robot.get_host_ws_path()
 
         ## General build folder
-        dir_host_build_base = host_ws_path / 'build' / self.full_name
+        dir_host_build_base = host_ws_path / FOLDER_BUILD / self.full_name
         ## Generic static data folder
-        dir_host_generic_static_data = host_ws_path / 'generic_static_data'
+        dir_host_generic_static_data = host_ws_path / FOLDER_GENERIC_STATIC_DATA
         ## Generic persistent data folder
-        dir_host_generic_persistent_data = host_ws_path / 'generic_persistent_data'
+        dir_host_generic_persistent_data = host_ws_path / FOLDER_GENERIC_PERSISTENT_DATA
         ## Component static data folder
-        dir_host_component_static_data = self.host_path / 'component_static_data'
+        dir_host_component_static_data = self.host_path / FOLDER_COMPONENT_STATIC_DATA
         ## Component persistent data folder
-        dir_host_component_persistent_data = host_ws_path / 'component_persistent_data' / self.full_name
+        dir_host_component_persistent_data = host_ws_path / FOLDER_COMPONENT_PERSISTENT_DATA
 
         volumes = [
                 (dir_host_build_base, ROBOT_BUILD_PATH),
