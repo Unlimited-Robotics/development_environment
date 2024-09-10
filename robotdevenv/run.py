@@ -142,14 +142,6 @@ class RobotDevRunHandler(Singleton):
                 'IDHOST': self.__robot.name,
                 'IDCOMPONENT': self.__component.name,
                 'ROBOT_NAME': ROBOT_NAME,
-                'ROBOT_BASE_PATH': ROBOT_BASE_PATH,
-                'ROBOT_GENERIC_STATIC_DATA_PATH': ROBOT_GENERIC_STATIC_DATA_PATH,
-                'ROBOT_GENERIC_PERSISTENT_DATA_PATH': ROBOT_GENERIC_PERSISTENT_DATA_PATH,
-                'ROBOT_COMPONENT_STATIC_DATA_PATH': ROBOT_COMPONENT_STATIC_DATA_PATH,
-                'ROBOT_COMPONENT_PERSISTENT_DATA_PATH': ROBOT_COMPONENT_PERSISTENT_DATA_PATH,
-                'ROBOT_CONFIG_PATH': ROBOT_CONFIG_PATH,
-                'ROBOT_BUILD_PATH': ROBOT_BUILD_PATH,
-                'ROBOT_SRC_PATH': ROBOT_SRC_PATH,
             }
 
             if 'ROS_DOMAIN_ID' in env_vars_from_files:
