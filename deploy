@@ -1,157 +1,20 @@
 #!/usr/bin/python3
 
 import argparse
-
-import git.remote
-import git.repo
-from tools.logger import *
-import git
-
-REPOSITORIES_PATH = './src/'
-
-# Adding parser to read the repository name
+from robotdevenv.deploy import RobotDevDeploy
 
 
-def arguments():
-    parser: argparse.ArgumentParser = argparse.ArgumentParser()
-    parser.add_argument('-r', '--repo', type=str, required=True)
-    return parser.parse_args()
-
-
-def main():
-    args: argparse.Namespace = None
+def deploy_repository():
 
     print()
     print('🤖🤖 UR ROBOT DEVELOPMENT ENVIRONMENT 🤖🤖')
     print(f'  🦾 Deploy command 🦿')
     print()
 
-    try:
-        args = arguments()
-    except:
-        log_error('No arguments provided or invalid arguments')
-        exit()
-
-    if not args.repo:
-        log_error('Repository name not provided')
-        exit()
-
-    PATH_REPO = REPOSITORIES_PATH + args.repo
-
-    repo, repo_url = check_repository_existance(PATH_REPO)
-    fetching_repository(repo, repo_url)
-    check_branch_name(repo)
-    check_changes_whitout_commit(repo)
-    check_local_and_remote_pointing_to_the_same_commit(repo)
-    check_if_commit_is_pointing_to_a_tag(repo)
-    deploy()
-    log_success('Deploy Process Completed!')
-
-
-# Return the repo object and repo url
-def check_repository_existance(repo_path: str = None) -> tuple[git.Repo, git.Remote]:
-
-    log_info(f'Checking if repository \'{repo_path}\' exists...')
-    try:
-        # Create object if the path is correct
-        repo: git.Repo = git.Repo(repo_path)
-
-        # Getting the repo url
-        repo_url: git.Remote = repo.remotes.origin.url
-
-    except git.InvalidGitRepositoryError:
-        log_error(
-            f'Repository \'{repo_path}\' not found. Check if it exists in src folder.')
-        exit()
-    except Exception as e:
-        log_error(e)
-        log_info(f'Exiting...')
-
-    log_ok(f'Repository \'{repo_path}\' found!')
-    return repo, repo_url
-
-
-def fetching_repository(repo: git.Repo, repo_url: git.Remote):
-    log_info(f'Fetching repository \'{repo_url}\'...')
-
-    try:
-        fetch_info: git.FetchInfo = repo.remotes.origin.fetch()
-
-        for info in fetch_info:
-            log_processing(f'Fetched {info.ref} -> {info.commit}')
-
-    except Exception as e:
-        log_error(f'Could not fetch repository. {e}')
-        log_info(f'Exiting...')
-
-    log_ok(f'Repository \'{repo_url}\' fetched!')
-
-
-def check_branch_name(repo: git.Repo, branch_name: str = 'main'):
-    log_info(
-        f'Checking if the repository is in the \'{branch_name}\' branch...')
-
-    current_branch: str = repo.active_branch.name
-
-    if current_branch != branch_name:
-        log_error(
-            'Current branch is not the main branch. Please checkout it. Exiting...')
-        exit()
-
-    log_ok(f'You are in the \'{current_branch}\' branch!')
-
-
-def check_changes_whitout_commit(repo: git.Repo):
-    log_info('Checking if there are changes without commit...')
-
-    if repo.is_dirty():
-        log_error(
-            f'There are uncommitted changes. Please commit them.')
-
-        # Index = Stagging area.
-        # Diff method compares the staggin area with the last confirmed commit in the repo
-        # None = Last commit, we could compare with other commits
-        for item in repo.index.diff(None):
-            log_warning(f'Changes without commit: {item.a_path}')
-        log_error(f'Exiting!')
-        exit()
-
-    log_ok('No changes without commit!')
-
-
-def check_local_and_remote_pointing_to_the_same_commit(repo: git.Repo, branch_name: str = 'main'):
-
-    local_branch = repo.heads[branch_name]
-    local_commit = local_branch.commit.hexsha
-
-    remote_branch = repo.remotes.origin.refs[branch_name]
-    remote_commit = remote_branch.commit.hexsha
-
-    if local_commit != remote_commit:
-        log_error(
-            'Local and remote branches are not pointing to the same commit. Exiting...')
-        log_info(f'Local commit: {local_commit}')
-        log_info(f'Remote commit: {remote_commit}')
-        exit()
-
-    log_ok(
-        f'Local and remote branches are pointing to the same commit! {local_commit}')
-
-
-def check_if_commit_is_pointing_to_a_tag(repo: git.Repo, branch_name: str = 'main'):
-    last_local_commit = repo.heads[branch_name].commit
-
-    for tag in repo.tags:
-        if tag.commit == last_local_commit:
-            log_error('The last local commit is pointing to a tag. Exiting...')
-            exit()
-
-    log_ok('The last local commit is not pointing to a tag!')
-
-
-def deploy():
-    print(f'Hello from deploy!')
+    parser: argparse = argparse.ArgumentParser()
+    deploy: RobotDevDeploy = RobotDevDeploy(parser)
+    deploy.deploy_repository()
 
 
 if __name__ == '__main__':
-    main()
+    deploy_repository()
