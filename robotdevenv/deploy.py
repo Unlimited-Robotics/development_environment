@@ -1,3 +1,4 @@
+import re
 import argparse
 from pathlib import Path
 import yaml
@@ -17,6 +18,7 @@ class RobotDevDeploy(Singleton):
         self.MANIFEST_PATH: str = ''
         self.COMPONENTS_PATH: str = ''
         self.LAST_VERSION_MAIN_REPO: str = ''
+        self.NEW_VERSION: str = ''
 
         args: argparse.Namespace = None
         try:
@@ -53,7 +55,9 @@ class RobotDevDeploy(Singleton):
         print(
             f'🏅 Last version {repository.repo_name}: {self.LAST_VERSION_MAIN_REPO}')
 
-        input(f'Please type the new version: ')
+        self.__check_version_format()
+        self.__check_version_order()
+        self.__check_version_mayor()
 
         print('✅ Deploy Process Completed!')
 
@@ -209,3 +213,65 @@ class RobotDevDeploy(Singleton):
         for repo in repo_dependencies_list:
             print(f'    📦 Check if {repo.repo_name} is pointing to last Tag!')
             repo.check_if_commit_is_pointing_to_a_tag()
+
+    def __check_version_format(self) -> None:
+
+        print(f'🏷️  Check version format...')
+
+        new_version: str = input(f'     ⌨ Please type the new version: ')
+        pattern = r'^(\d+)\.(\d+)(\.beta)?$'
+        coincidence = re.match(pattern, new_version)
+
+        if coincidence is None:
+            print('❌ Version format is not valid. Exiting...')
+            exit()
+        else:
+            print('     🟢 Version format is valid!')
+            self.NEW_VERSION = new_version
+
+    def __get_version_tuple(self, version: str) -> tuple[int, int, bool]:
+
+        pattern = r'^(\d+)\.(\d+)(\.beta)?$'
+        coincidence = re.match(pattern, version)
+
+        mayor = int(coincidence.group(1))
+        minor = int(coincidence.group(2))
+        is_beta = coincidence.group(3) is None
+
+        return (mayor, minor, is_beta)
+
+    def __check_version_order(self) -> None:
+
+        print(f'🏷️  Check version order...')
+
+        last_version_tuple = self.__get_version_tuple(str(
+            self.LAST_VERSION_MAIN_REPO))
+        new_version_tuple = self.__get_version_tuple(str(self.NEW_VERSION))
+
+        # print(f'     ➡️  Last version: {last_version_tuple}')
+        # print(f'     ➡️  New version: {new_version_tuple}')
+
+        if new_version_tuple > last_version_tuple:
+            print('     🟢 Version order is valid!')
+        else:
+            print('❌ Version order is not valid. Exiting...')
+            exit()
+
+    def __check_version_mayor(self) -> None:
+
+        last_version_tuple = self.__get_version_tuple(str(
+            self.LAST_VERSION_MAIN_REPO))
+        new_version_tuple = self.__get_version_tuple(str(self.NEW_VERSION))
+
+        if new_version_tuple[0] > last_version_tuple[0]:
+            answer: str = input(
+                'Are you sure you want to deploy this mayor version? (y/n): ')
+
+            if answer == 'y':
+                print('Continuing the deployment process...')
+            else:
+                print('Exiting...')
+                exit()
+
+    def __get_repo_from_path(self, path: Path) -> RobotDevRepository:
+        return RobotDevRepository(path)
