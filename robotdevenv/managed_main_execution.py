@@ -14,3 +14,4 @@ def managed_main_execution(main_fun:callable):
         print()
         print('⛔ Error Summary:')
         print(f'  {str(e).rstrip()}')
+        exit(1)
