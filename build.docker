@@ -23,12 +23,18 @@ def build_component():
     print()
     print(f'📦📦  Component: {component.full_name}')
     print(f'🤖🤖      Robot: {robot.name}')
-    print()
+    print
     print(f'🛠️  Building component image: \'{component.image_dev_name}\'')
     print(f'            from dockerfile: \'{component.dockerfile_path}\'')
     print()
 
-    docker_handler.build_dev_image()
+    parser.add_argument('-p', '--prod', action='store_true')
+    args = dict(parser.parse_known_args()[0]._get_kwargs())
+
+    if args['prod']:
+        docker_handler.build_prod_image()
+    else:
+        docker_handler.build_dev_image()
 
 
 if __name__ == "__main__":

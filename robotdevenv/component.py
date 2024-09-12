@@ -4,7 +4,6 @@ import yaml
 from robotdevenv.robot import RobotDevRobot
 from robotdevenv.singleton import Singleton
 
-from robotdevenv.constants import IMAGE_NAME_TEMPLATE
 from robotdevenv.constants import CONTAINER_NAME_TEMPLATE
 from robotdevenv.constants import ROBOT_GENERIC_STATIC_DATA_PATH
 from robotdevenv.constants import ROBOT_GENERIC_PERSISTENT_DATA_PATH
@@ -103,20 +102,9 @@ class RobotDevComponent(Singleton):
             f'{robot.platform}.prod.dockerfile'
         if not dockerfile_prod_path.is_file():
             dockerfile_prod_path = None
-        
-        image_dev_name = IMAGE_NAME_TEMPLATE.format(
-            repo=repo,
-            component=name,
-            platform=robot.platform,
-            version=version_dev,
-        )
 
-        image_prod_name = IMAGE_NAME_TEMPLATE.format(
-            repo=repo,
-            component=name,
-            platform=robot.platform,
-            version=version_prod,
-        )
+        image_dev_name = f'{".".join(repo.split("_", 2))}.{name}:{robot.platform}.{version_dev}'
+        image_prod_name = f'{".".join(repo.split("_", 2))}.{name}:{robot.platform}.{version_prod}'
 
         container_name = CONTAINER_NAME_TEMPLATE.format(
             repo=repo,
