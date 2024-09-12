@@ -30,14 +30,20 @@ class RobotDevRepository:
 
         # print(f'  🔎  Checking if repository \'{repo_path}\' exists...')
         print(f'    🔎  Checking if repository \'{self.repo_name}\' exists...')
-        # Create object if the path is correct
-        self.repo = git.Repo(repo_path)
 
-        # Getting the repo url
-        self.repo_url = self.repo.remotes.origin.url
+        try:
+            # Create object if the path is correct
+            self.repo = git.Repo(repo_path)
 
-        # print(f'  👍 Repository \'{repo_path}\' found!')
-        print(f'    👍 Repository \'{self.repo_name}\' found!')
+            # Getting the repo url
+            self.repo_url = self.repo.remotes.origin.url
+
+            # print(f'  👍 Repository \'{repo_path}\' found!')
+            print(f'    👍 Repository \'{self.repo_name}\' found!')
+        except Exception as e:
+            print(
+                f'❌ Repository \'{self.repo_name}\' not found. Check if it exists in src folder.')
+            exit()
 
     def fetching_repository(self):
         print(f'🔵  Fetching repository \'{self.repo_url}\'...')
@@ -146,3 +152,17 @@ class RobotDevRepository:
         if len(self.repo.tags) == 0:
             return []
         return self.repo.tags
+
+    def create_commit(self, message: str):
+        print(f'    📩 Creating commit with message: {message}')
+        self.repo.git.add(all=True)
+        self.repo.index.commit(message)
+
+    def create_tag(self, tag_name: str):
+        print(f'    🏷 Creating tag: {tag_name}')
+        self.repo.create_tag(tag_name)
+
+    def push_repository(self):
+        print('    🚀 Pushing repository...')
+        self.repo.remotes.origin.push()
+        self.repo.remotes.origin.push(tags=True)

@@ -1,7 +1,12 @@
+import os
 import re
 import argparse
-from pathlib import Path
 import yaml
+import paramiko
+import paramiko.ssh_exception
+import xml.etree.ElementTree as xmlObj
+import lxml.etree
+from pathlib import Path
 from robotdevenv.singleton import Singleton
 from robotdevenv.constants import LOCAL_SRC_PATH
 from robotdevenv.git import RobotDevRepository
@@ -26,11 +31,11 @@ class RobotDevDeploy(Singleton):
             parser.add_argument('-r', '--repo', type=str, required=True)
             args = parser.parse_args()
         except Exception:
-            print('No arguments provided or invalid arguments')
+            # print('No arguments provided or invalid arguments')
             RobotDevDeployError('❌ No arguments provided or invalid arguments')
 
         if not args.repo:
-            print('Repository name not provided')
+            # print('Repository name not provided')
             RobotDevDeployError('❌ Repository name not provided')
 
         self.PATH_REPO = LOCAL_SRC_PATH / args.repo
@@ -39,39 +44,32 @@ class RobotDevDeploy(Singleton):
 
     def deploy_repository(self):
 
-        repository: RobotDevRepository = self.__get_repo_from_path(
-            self.PATH_REPO)
+        repository: RobotDevRepository = RobotDevRepository(self.PATH_REPO)
+        repository.fetching_repository()
+        repository.check_branch_name()
+        repository.check_changes_whitout_commit()
+        repository.check_local_and_remote_pointing_to_the_same_commit()
+        repository.check_if_commit_is_not_pointing_to_a_tag()
+        self.__last_tag_same_as_manifest(repository.get_all_tags())
 
-        # repository.fetching_repository()
-        # repository.check_branch_name()
-        # repository.check_changes_whitout_commit()
-        # repository.check_local_and_remote_pointing_to_the_same_commit()
-        # repository.check_if_commit_is_not_pointing_to_a_tag()
-        # self.__last_tag_same_as_manifest(repository.get_all_tags())
+        self._subprocess_repository_dependencies()
 
-        # self._subprocess_repository_dependencies()
         self.LAST_VERSION_MAIN_REPO = repository.get_all_tags()[-1]
-
         print(
             f'🏅 Last version {repository.repo_name}: {self.LAST_VERSION_MAIN_REPO}')
 
-        self.__check_version_format()
-        self.__check_version_order()
-        self.__check_version_mayor()
+        # self.__check_version_format()
+        # self.__check_version_order()
+        # self.__check_version_mayor()
+        # self.__check_building_host_available()
+        # self.__update_manifest()
+        # self.__update_packages_xml()
+        # repository.create_commit(self.NEW_VERSION)
+        # repository.create_tag(self.NEW_VERSION)
+        # repository.push_repository()
 
-        print('✅ Deploy Process Completed!')
-
-    # Get repository from path and check if it exists
-    def __get_repo_from_path(self, path_repo) -> RobotDevRepository:
-        repository: RobotDevRepository = None
-        try:
-            repository: RobotDevRepository = RobotDevRepository(path_repo)
-        except Exception as e:
-            print(
-                f'❌ Repository \'{path_repo}\' not found. Check if it exists in src folder.')
-            exit()
-
-        return repository
+        print()
+        print('🎉🎉 Deploy Process Completed!  🎉🎉')
 
     def __last_tag_same_as_manifest(self, tags) -> None:
 
@@ -108,18 +106,20 @@ class RobotDevDeploy(Singleton):
 
     def _subprocess_repository_dependencies(self) -> None:
 
+        print()
         print(f'⚙️  DEPENDENCY PROCESS  ⚙️')
+        print()
 
         folder_dependencies: list = self.__get_folders_dependencies()
 
-        dependencies_yaml_files: list = self.__get_files_dependencies(
-            folder_dependencies)
+        dependencies_yaml_files: list = \
+            self.__get_files_dependencies(folder_dependencies)
 
-        dependencies_list: set[str] = self.__get_src_dependencies(
-            dependencies_yaml_files)
+        dependencies_list: set[str] = \
+            self.__get_src_dependencies(dependencies_yaml_files)
 
-        dependencies_repo_list: list = self.__get_dependency_repo_list(
-            dependencies_list)
+        dependencies_repo_list: list = \
+            self.__get_dependency_repo_list(dependencies_list)
 
         self.__fetch_dependency_repo(dependencies_repo_list)
 
@@ -127,8 +127,9 @@ class RobotDevDeploy(Singleton):
 
         self.__check_pointing_to_tag(dependencies_repo_list)
 
-    # Browse through the components folder and get all folders
+        print()
 
+    # Browse through the components folder and get all folders
     def __get_folders_dependencies(self) -> list:
 
         print(f'📂  Getting folders dependencies...')
@@ -152,7 +153,15 @@ class RobotDevDeploy(Singleton):
 
             # Get only yaml files
             for file in path.iterdir():
+
                 if file.is_file() and (file.suffix == '.yaml' or file.suffix == '.yml'):
+                    # Check if the yaml file has the same name as the folder
+                    file_name_without_extension = file.name.split('.')[0]
+                    if folder.name != file_name_without_extension:
+                        print(
+                            f'❌ The yaml file \033[1m{file_name_without_extension}\033[0m does not have the same name as the folder \033[1m{folder.name}\033[0m')
+
+                        exit()
                     list_files_dependencies.append(file)
         return list_files_dependencies
 
@@ -187,8 +196,8 @@ class RobotDevDeploy(Singleton):
         repo_dependencies_list: list = []
         for dependency in list_dependencies:
             LOCAL_PATH_REPOSITORY = LOCAL_SRC_PATH / dependency
-            repo_dependencies_list.append(
-                self.__get_repo_from_path(LOCAL_PATH_REPOSITORY))
+            repo_dependency = RobotDevRepository(LOCAL_PATH_REPOSITORY)
+            repo_dependencies_list.append(repo_dependency)
 
         return repo_dependencies_list
 
@@ -208,10 +217,10 @@ class RobotDevDeploy(Singleton):
 
     def __check_pointing_to_tag(self, repo_dependencies_list: list[RobotDevRepository]) -> None:
 
-        print(f'🟡  Check pointing to tag...')
+        print(f'🟡  Check dependencies pointing to tag...')
 
         for repo in repo_dependencies_list:
-            print(f'    📦 Check if {repo.repo_name} is pointing to last Tag!')
+            print(f'    📦 Check if {repo.repo_name} is pointing to a Tag!')
             repo.check_if_commit_is_pointing_to_a_tag()
 
     def __check_version_format(self) -> None:
@@ -273,5 +282,139 @@ class RobotDevDeploy(Singleton):
                 print('Exiting...')
                 exit()
 
-    def __get_repo_from_path(self, path: Path) -> RobotDevRepository:
-        return RobotDevRepository(path)
+    def __check_building_host_available(self):
+
+        print(f'🏗️  Check building host available...')
+
+        available_hosts: list[str] = self.__get_ssh_hosts()
+        available_hosts.sort()
+
+        print(f'     🕹️ Available hosts:')
+        for host in available_hosts:
+            print(f'     - {host}')
+
+        build_host: str = input(
+            f'     ⌨ Please enter the name of the building host: ')
+
+        if build_host not in available_hosts:
+            print(f'❌ Host {build_host} not found. Exiting...')
+            exit()
+
+        ssh = paramiko.SSHClient()
+        ssh.load_system_host_keys()
+
+        ssh_config = paramiko.SSHConfig()
+        user_config_file = os.path.expanduser("~/.ssh/config")
+
+        with open(user_config_file) as f:
+            ssh_config.parse(f)
+
+        config = ssh_config.lookup(build_host)
+
+        if config is not None:
+            try:
+                host = config.get("hostname")
+                user = config.get("user")
+                ssh.connect(hostname=host, username=user)
+                print(f'     🟢 Host {build_host}, {host} available!')
+                ssh.close()
+            except paramiko.ssh_exception.NoValidConnectionsError:
+                print(
+                    f'❌ Unable to connect to host {build_host}. Host: {host}, User: {user}')
+                print('Exiting...')
+                exit()
+            except paramiko.ssh_exception.AuthenticationException:
+                print(
+                    f'❌ Authentication failed for host {build_host}. Exiting...')
+                exit()
+            except paramiko.ssh_exception.PasswordRequiredException:
+                print(f'❌ Password required for host {build_host}. Exiting...')
+                exit()
+            except Exception:
+                print(f'❌ Host {build_host} not found. Exiting...')
+                exit()
+            finally:
+                ssh.close()
+
+    def __get_ssh_hosts(self) -> list[str]:
+        # print(f'🔑  Get ssh hosts...')
+
+        ssh_config = paramiko.SSHConfig()
+        user_config_file = os.path.expanduser("~/.ssh/config")
+
+        with open(user_config_file) as f:
+            ssh_config.parse(f)
+
+        # Getting hosts from the config file
+        hosts: list[str] = [
+            host for host in ssh_config.get_hostnames()]
+
+        # Removing wildcards
+        hosts = [host for host in hosts if '*' not in host]
+
+        return hosts
+
+    def __update_manifest(self) -> None:
+
+        print(f'🔺  Update manifest file...')
+
+        manifest: dict = {}
+
+        # Get manifest file in the repo folder
+        try:
+            with open(self.MANIFEST_PATH, 'r') as file:
+                manifest = yaml.safe_load(file)
+        except FileNotFoundError:
+            print(f'❌ File \'{self.MANIFEST_PATH}\' not found.')
+            exit()
+
+        # Update manifest version
+        if self.NEW_VERSION != '':
+            manifest['version'] = self.NEW_VERSION
+            with open(self.MANIFEST_PATH, 'w') as file:
+                yaml.dump(manifest, file)
+
+            print('     🟢 Manifest file updated.')
+        else:
+            print('❌ New version is empty. Exiting...')
+            exit()
+
+    def __update_packages_xml(self) -> None:
+
+        print(f'🔺  Update all packages.xml...')
+
+        if self.NEW_VERSION == '':
+            print('❌ New version is empty. Exiting...')
+            exit()
+
+        path = Path(self.PATH_REPO)
+
+        # Get list of package xml files
+        list_path_packages_xml_files: list = []
+        for folder in path.iterdir():
+            if folder.is_dir() and not folder.name.endswith('.git') and not folder.name.startswith('components'):
+                list_path_packages_xml_files.append(folder / 'package.xml')
+
+        if len(list_path_packages_xml_files) == 0:
+            print('❌ No package.xml files found. Exiting...')
+            exit()
+
+        for file in list_path_packages_xml_files:
+            parser = lxml.etree.XMLParser(remove_blank_text=True)
+            tree = lxml.etree.parse(file, parser)
+            root = tree.getroot()
+
+            version_tag = root.find('version')
+            if version_tag is not None:
+                version_tag.text = self.NEW_VERSION
+                xml_str = lxml.etree.tostring(tree, pretty_print=True,
+                                              xml_declaration=True,
+                                              encoding='utf-8'
+                                              ).decode("utf-8")
+
+                xml_str = xml_str.replace(" encoding='utf-8'", '').strip()
+
+                with open(file, 'w') as f:
+                    f.write(xml_str)
+
+        print('     🟢 All packages.xml updated.')
