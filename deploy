@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+from robotdevenv.managed_main_execution import managed_main_execution
 from robotdevenv.deploy import RobotDevDeploy
 
 
@@ -12,9 +13,9 @@ def deploy_repository():
     print()
 
     parser: argparse = argparse.ArgumentParser()
-    deploy: RobotDevDeploy = RobotDevDeploy(parser)
-    deploy.deploy_repository()
+    robot_dev_deploy: RobotDevDeploy = RobotDevDeploy(parser)
+    robot_dev_deploy.deploy_repository()
 
 
 if __name__ == '__main__':
-    deploy_repository()
+    managed_main_execution(deploy_repository)

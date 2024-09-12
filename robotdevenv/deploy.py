@@ -31,12 +31,11 @@ class RobotDevDeploy(Singleton):
             parser.add_argument('-r', '--repo', type=str, required=True)
             args = parser.parse_args()
         except Exception:
-            # print('No arguments provided or invalid arguments')
-            RobotDevDeployError('❌ No arguments provided or invalid arguments')
+            raise RobotDevDeployError(
+                '❌ No arguments provided or invalid arguments')
 
         if not args.repo:
-            # print('Repository name not provided')
-            RobotDevDeployError('❌ Repository name not provided')
+            raise RobotDevDeployError('❌ Repository name not provided')
 
         self.PATH_REPO = LOCAL_SRC_PATH / args.repo
         self.MANIFEST_PATH = self.PATH_REPO / 'manifest.yaml'
@@ -52,7 +51,7 @@ class RobotDevDeploy(Singleton):
         repository.check_if_commit_is_not_pointing_to_a_tag()
         self.__last_tag_same_as_manifest(repository.get_all_tags())
 
-        self._subprocess_repository_dependencies()
+        self.__subprocess_repository_dependencies()
 
         self.LAST_VERSION_MAIN_REPO = repository.get_all_tags()[-1]
         print(
@@ -69,13 +68,12 @@ class RobotDevDeploy(Singleton):
         # repository.push_repository()
 
         print()
-        print('🎉🎉 Deploy Process Completed!  🎉🎉')
+        print('🎉🎉 Deploy Process Completed! 🎉🎉')
 
     def __last_tag_same_as_manifest(self, tags) -> None:
 
         if tags == []:
-            print('❌ There are no tags in the repository.')
-            exit()
+            raise RobotDevDeployError('❌ There are no tags in the repository.')
 
         manifest: dict = {}
         version_manifest: str = ''
@@ -85,13 +83,16 @@ class RobotDevDeploy(Singleton):
             with open(self.MANIFEST_PATH, 'r') as file:
                 manifest = yaml.safe_load(file)
         except FileNotFoundError:
-            print(f'❌ File \'{self.MANIFEST_PATH}\' not found.')
+            raise RobotDevDeployError(
+                f'❌ File \'{self.MANIFEST_PATH}\' not found.'
+            )
 
         # Get manifest version
         version_manifest = manifest.get('version')
         if version_manifest == None:
-            print('❌ File \'{self.MANIFEST_PATH}\' not have \'version\' key.')
-            exit()
+            raise RobotDevDeployError(
+                '❌ File \'{self.MANIFEST_PATH}\' not have \'version\' key.'
+            )
 
         # Check version from manifest file is the same as the last tag
         last_tag: str = tags[-1].name
@@ -99,12 +100,10 @@ class RobotDevDeploy(Singleton):
             print(
                 f'✅ The last tag: {last_tag}  is the same as {version_manifest} in the manisfes.yaml file')
         else:
-            print(
+            raise RobotDevDeployError(
                 f'❌ The last tag: {last_tag} is not the same as {version_manifest} in the manisfes.yaml file')
-            print('Exiting...')
-            exit()
 
-    def _subprocess_repository_dependencies(self) -> None:
+    def __subprocess_repository_dependencies(self) -> None:
 
         print()
         print(f'⚙️  DEPENDENCY PROCESS  ⚙️')
@@ -158,10 +157,8 @@ class RobotDevDeploy(Singleton):
                     # Check if the yaml file has the same name as the folder
                     file_name_without_extension = file.name.split('.')[0]
                     if folder.name != file_name_without_extension:
-                        print(
+                        raise RobotDevDeployError(
                             f'❌ The yaml file \033[1m{file_name_without_extension}\033[0m does not have the same name as the folder \033[1m{folder.name}\033[0m')
-
-                        exit()
                     list_files_dependencies.append(file)
         return list_files_dependencies
 
@@ -180,8 +177,7 @@ class RobotDevDeploy(Singleton):
                         for dependency in src_dependencies:
                             src_dependencies_list.add(dependency)
         except Exception as e:
-            print(f'❌ File \'{yaml_file}\' not found.')
-            exit()
+            raise RobotDevDeployError(f'❌ File \'{yaml_file}\' not found.')
 
         # Remove the current repository from the list
         src_dependencies_list.remove(self.PATH_REPO.name)
@@ -232,8 +228,8 @@ class RobotDevDeploy(Singleton):
         coincidence = re.match(pattern, new_version)
 
         if coincidence is None:
-            print('❌ Version format is not valid. Exiting...')
-            exit()
+            raise RobotDevDeployError(
+                '❌ Version format is not valid. Exiting...')
         else:
             print('     🟢 Version format is valid!')
             self.NEW_VERSION = new_version
@@ -263,8 +259,8 @@ class RobotDevDeploy(Singleton):
         if new_version_tuple > last_version_tuple:
             print('     🟢 Version order is valid!')
         else:
-            print('❌ Version order is not valid. Exiting...')
-            exit()
+            raise RobotDevDeployError(
+                '❌ Version order is not valid. Exiting...')
 
     def __check_version_mayor(self) -> None:
 
@@ -297,8 +293,8 @@ class RobotDevDeploy(Singleton):
             f'     ⌨ Please enter the name of the building host: ')
 
         if build_host not in available_hosts:
-            print(f'❌ Host {build_host} not found. Exiting...')
-            exit()
+            raise RobotDevDeployError(
+                f'❌ Host {build_host} not found. Exiting...')
 
         ssh = paramiko.SSHClient()
         ssh.load_system_host_keys()
@@ -319,20 +315,17 @@ class RobotDevDeploy(Singleton):
                 print(f'     🟢 Host {build_host}, {host} available!')
                 ssh.close()
             except paramiko.ssh_exception.NoValidConnectionsError:
-                print(
+                raise RobotDevDeployError(
                     f'❌ Unable to connect to host {build_host}. Host: {host}, User: {user}')
-                print('Exiting...')
-                exit()
             except paramiko.ssh_exception.AuthenticationException:
-                print(
+                raise RobotDevDeployError(
                     f'❌ Authentication failed for host {build_host}. Exiting...')
-                exit()
             except paramiko.ssh_exception.PasswordRequiredException:
-                print(f'❌ Password required for host {build_host}. Exiting...')
-                exit()
+                raise RobotDevDeployError(
+                    f'❌ Password required for host {build_host}. Exiting...')
             except Exception:
-                print(f'❌ Host {build_host} not found. Exiting...')
-                exit()
+                raise RobotDevDeployError(
+                    f'❌ Host {build_host} not found. Exiting...')
             finally:
                 ssh.close()
 
@@ -340,10 +333,14 @@ class RobotDevDeploy(Singleton):
         # print(f'🔑  Get ssh hosts...')
 
         ssh_config = paramiko.SSHConfig()
-        user_config_file = os.path.expanduser("~/.ssh/config")
+        try:
+            user_config_file = os.path.expanduser("~/.ssh/config")
+            with open(user_config_file) as f:
+                ssh_config.parse(f)
 
-        with open(user_config_file) as f:
-            ssh_config.parse(f)
+        except Exception:
+            raise RobotDevDeployError(
+                '❌ SSH config file not found. Exiting...')
 
         # Getting hosts from the config file
         hosts: list[str] = [
@@ -365,8 +362,8 @@ class RobotDevDeploy(Singleton):
             with open(self.MANIFEST_PATH, 'r') as file:
                 manifest = yaml.safe_load(file)
         except FileNotFoundError:
-            print(f'❌ File \'{self.MANIFEST_PATH}\' not found.')
-            exit()
+            raise RobotDevDeployError(
+                f'❌ File \'{self.MANIFEST_PATH}\' not found.')
 
         # Update manifest version
         if self.NEW_VERSION != '':
@@ -376,16 +373,14 @@ class RobotDevDeploy(Singleton):
 
             print('     🟢 Manifest file updated.')
         else:
-            print('❌ New version is empty. Exiting...')
-            exit()
+            raise RobotDevDeployError('❌ New version is empty. Exiting...')
 
     def __update_packages_xml(self) -> None:
 
         print(f'🔺  Update all packages.xml...')
 
         if self.NEW_VERSION == '':
-            print('❌ New version is empty. Exiting...')
-            exit()
+            raise RobotDevDeployError('❌ New version is empty. Exiting...')
 
         path = Path(self.PATH_REPO)
 
@@ -396,8 +391,8 @@ class RobotDevDeploy(Singleton):
                 list_path_packages_xml_files.append(folder / 'package.xml')
 
         if len(list_path_packages_xml_files) == 0:
-            print('❌ No package.xml files found. Exiting...')
-            exit()
+            raise RobotDevDeployError(
+                '❌ No package.xml files found. Exiting...')
 
         for file in list_path_packages_xml_files:
             parser = lxml.etree.XMLParser(remove_blank_text=True)

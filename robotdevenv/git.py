@@ -41,9 +41,8 @@ class RobotDevRepository:
             # print(f'  👍 Repository \'{repo_path}\' found!')
             print(f'    👍 Repository \'{self.repo_name}\' found!')
         except Exception as e:
-            print(
+            raise RobotDevGitError(
                 f'❌ Repository \'{self.repo_name}\' not found. Check if it exists in src folder.')
-            exit()
 
     def fetching_repository(self):
         print(f'🔵  Fetching repository \'{self.repo_url}\'...')
@@ -55,8 +54,7 @@ class RobotDevRepository:
                 print(f'   📩 Fetched {info.ref} -> {info.commit}')
 
         except Exception as e:
-            print(f'❌ Could not fetch repository. {e}')
-            print(f'❌ Exiting...')
+            raise RobotDevGitError(f'❌ Could not fetch repository.')
 
         print(f'   🟢 Repository fetched!')
 
@@ -67,9 +65,8 @@ class RobotDevRepository:
         current_branch: str = self.repo.active_branch.name
 
         if current_branch != branch_name:
-            print(
+            raise RobotDevGitError(
                 '❌ Current branch is not the main branch. Please checkout it. Exiting...')
-            exit()
 
         print(f'✅ You are in the \'{current_branch}\' branch!')
 
@@ -85,8 +82,9 @@ class RobotDevRepository:
             # None = Last commit, we could compare with other commits
             for item in self.repo.index.diff(None):
                 print(f'    🔎 Changes without commit: {item.a_path}')
-            print(f'Exiting!')
-            exit()
+
+            raise RobotDevGitError(
+                '❌ There are uncommitted changes.')
 
         print('    🟢 No changes without commit!')
 
@@ -103,7 +101,8 @@ class RobotDevRepository:
                 '❌ Local and remote branches are not pointing to the same commit. Exiting...')
             print(f'    ➡️  Local commit: {local_commit}')
             print(f'    ➡️  Remote commit: {remote_commit}')
-            exit()
+            raise RobotDevGitError(
+                '❌ Local and remote branches are not pointing to the same commit. Exiting...')
 
         print(
             f'✅ Local and remote branches are pointing to the same commit! {local_commit}')
@@ -113,8 +112,9 @@ class RobotDevRepository:
 
         if len(self.repo.tags) == 0:
             print(f'    ❌ There are no tags in the repository.')
-            print(f'Exiting...')
-            exit()
+            raise RobotDevGitError(
+                '❌ There are no tags in the repository.'
+            )
 
         last_local_commit = self.repo.heads[branch_name].commit
         last_tag: git.Tag = self.repo.tags[-1]
@@ -122,8 +122,9 @@ class RobotDevRepository:
         if last_tag.commit == last_local_commit:
             print(f'    ❌ The last local commit is pointing to a tag.')
             print(f'        ➡️  Tag {last_tag}.')
-            print(f'Exiting...')
-            exit()
+            raise RobotDevGitError(
+                '❌ The last local commit is pointing to a tag.'
+            )
 
         print('✅ The last local commit is not pointing to a tag!')
 
@@ -131,9 +132,9 @@ class RobotDevRepository:
     def check_if_commit_is_pointing_to_a_tag(self):
 
         if len(self.repo.tags) == 0:
-            print(f'    ❌ There are no tags in the repository.')
-            print(f'Exiting...')
-            exit()
+            raise RobotDevGitError(
+                '❌ There are no tags in the repository.'
+            )
 
         current_branch = self.repo.active_branch.name
         last_local_commit = self.repo.heads[current_branch].commit
@@ -143,8 +144,8 @@ class RobotDevRepository:
         if last_tag.commit != last_local_commit:
             print(f'    ❌ The last local commit is not pointing to a tag.')
             print(f'        ➡️  Last tag: {last_tag}.')
-            print(f'Exiting...')
-            exit()
+            raise RobotDevGitError(
+                f'❌ The last local commit is not pointing to a tag.')
 
         print('✅ The last local commit is pointing to a tag!')
 
