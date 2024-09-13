@@ -5,12 +5,13 @@ import argparse
 from robotdevenv.ssh import RobotDevSSHHandler as SSHHandler
 from robotdevenv.git import RobotDevGitHandler as GitHandler
 from robotdevenv.singleton import Singleton
+
 from robotdevenv.constants import DEV_ENV_PATH
 from robotdevenv.constants import REMOTE_HOST_WORKSPACES_FOLDER_NAME
+from robotdevenv.constants import FILE_ROBOTS_PATH
 
 
 LOCALHOST_DEFAULT_PLATFORM = 'x86_64'
-ROBOTS_INFO_FILE_NAME = 'robots.yaml'
 
 
 class RobotDevRobotError(Exception): pass
@@ -29,14 +30,12 @@ class RobotDevRobot(Singleton):
         if is_local:
             platform = LOCALHOST_DEFAULT_PLATFORM
         else:
-            robots_host_info_file_path = DEV_ENV_PATH / ROBOTS_INFO_FILE_NAME
-
             try:
-                with open(robots_host_info_file_path, 'r') as file:
+                with open(FILE_ROBOTS_PATH, 'r') as file:
                     robots_host_info = yaml.safe_load(file)
             except FileNotFoundError:
                 raise RobotDevRobotError(
-                    f'File \'{ROBOTS_INFO_FILE_NAME}\' not found.'
+                    f'File \'{FILE_ROBOTS_PATH}\' not found.'
                 )
             
             try:
@@ -44,7 +43,7 @@ class RobotDevRobot(Singleton):
             except KeyError:
                 raise RobotDevRobotError(
                     f'Robot \'{name}\' not found in file '
-                    f'\'{ROBOTS_INFO_FILE_NAME}\'.'
+                    f'\'{FILE_ROBOTS_PATH}\'.'
                 )
             
             try:
@@ -52,7 +51,7 @@ class RobotDevRobot(Singleton):
             except KeyError as field:
                 raise RobotDevRobotError(
                     f'Field \'{field}\' not found for robot \'{name}\' in '
-                    f'file \'{ROBOTS_INFO_FILE_NAME}\'.'
+                    f'file \'{FILE_ROBOTS_PATH}\'.'
                 )
         
         # Public attributes

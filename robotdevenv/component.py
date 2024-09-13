@@ -1,5 +1,5 @@
-import argparse
 import yaml
+import argparse
 
 from robotdevenv.robot import RobotDevRobot
 from robotdevenv.singleton import Singleton
@@ -27,7 +27,7 @@ class RobotDevComponent(Singleton):
 
     def __init__(self, 
                 parser:argparse.ArgumentParser,
-                robot:RobotDevRobot
+                robot:RobotDevRobot,
             ):
         
         parser.add_argument('-c', '--component', type=str, required=True)

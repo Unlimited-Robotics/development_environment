@@ -1,9 +1,11 @@
-import subprocess
 import git
+import pathlib
+import subprocess
+
+from robotdevenv.constants import DEPLOY_BRANCH
 
 
-class RobotDevGitError(Exception):
-    pass
+class RobotDevGitError(Exception): pass
 
 
 class RobotDevGitHandler:
@@ -20,148 +22,104 @@ class RobotDevGitHandler:
             )
 
 
-class RobotDevRepository:
+class RobotDevRepositoryHandler:
 
-    def __init__(self, repo_path: str) -> None:
-
-        self.repo: git.Repo = None
-        self.repo_url: git.Remote = None
-        self.repo_name = repo_path.name
-
-        # print(f'  🔎  Checking if repository \'{repo_path}\' exists...')
-        print(f'    🔎  Checking if repository \'{self.repo_name}\' exists...')
+    def __init__(self, 
+                repo_path: pathlib.Path,
+            ):
+        repo_name = repo_path.name
 
         try:
             # Create object if the path is correct
-            self.repo = git.Repo(repo_path)
-
+            repo = git.Repo(repo_path)
             # Getting the repo url
-            self.repo_url = self.repo.remotes.origin.url
-
-            # print(f'  👍 Repository \'{repo_path}\' found!')
-            print(f'    👍 Repository \'{self.repo_name}\' found!')
-        except Exception as e:
+            repo_url:git.Remote = repo.remotes.origin.url
+        except git.exc.NoSuchPathError as e:
             raise RobotDevGitError(
-                f'❌ Repository \'{self.repo_name}\' not found. Check if it exists in src folder.')
+                f'Repository \'{repo_name}\' not found. Check if it exists in '
+                'src folder.'
+            )
+        
+        # Public attributes
+        self.repo_name = repo_name
+        self.repo = repo
+        self.repo_url = repo_url
 
-    def fetching_repository(self):
-        print(f'🔵  Fetching repository \'{self.repo_url}\'...')
 
-        try:
-            fetch_info: git.FetchInfo = self.repo.remotes.origin.fetch()
+    def fetch(self):
+        self.repo.remotes.origin.fetch()
 
-            for info in fetch_info:
-                print(f'   📩 Fetched {info.ref} -> {info.commit}')
 
-        except Exception as e:
-            raise RobotDevGitError(f'❌ Could not fetch repository.')
-
-        print(f'   🟢 Repository fetched!')
-
-    def check_branch_name(self, branch_name: str = 'main'):
-        print(
-            f'ℹ️  Checking if the repository is in the \'{branch_name}\' branch...')
-
-        current_branch: str = self.repo.active_branch.name
-
-        if current_branch != branch_name:
+    def assert_deploy_branch(self, branch_name: str = DEPLOY_BRANCH):
+        if self.repo.active_branch.name != branch_name:
             raise RobotDevGitError(
-                '❌ Current branch is not the main branch. Please checkout it. Exiting...')
+                f'Repository \'{self.repo_name}\' not in branch '
+                f'\'{DEPLOY_BRANCH}\'.'
+            )
 
-        print(f'✅ You are in the \'{current_branch}\' branch!')
 
-    def check_changes_whitout_commit(self):
-        print('    🔎  Checking if there are changes without commit...')
-
+    def assert_no_local_changes(self):
         if self.repo.is_dirty():
-            print(
-                f'❌ There are uncommitted changes. Please commit them.')
-
-            # Index = Stagging area.
-            # Diff method compares the staggin area with the last confirmed commit in the repo
-            # None = Last commit, we could compare with other commits
-            for item in self.repo.index.diff(None):
-                print(f'    🔎 Changes without commit: {item.a_path}')
-
+            print(f'There are uncommitted changes.')
             raise RobotDevGitError(
-                '❌ There are uncommitted changes.')
+                f'Repository \'{self.repo_name}\' has uncommited changes.'
+            )
 
-        print('    🟢 No changes without commit!')
 
-    def check_local_and_remote_pointing_to_the_same_commit(self, branch_name: str = 'main'):
-
-        local_branch = self.repo.heads[branch_name]
-        local_commit = local_branch.commit.hexsha
-
-        remote_branch = self.repo.remotes.origin.refs[branch_name]
-        remote_commit = remote_branch.commit.hexsha
-
+    def assert_branch_updated(self, branch_name: str = DEPLOY_BRANCH):
+        local_commit = self.repo.heads[branch_name].commit.hexsha
+        remote_commit = \
+            self.repo.remotes.origin.refs[branch_name].commit.hexsha
         if local_commit != remote_commit:
-            print(
-                '❌ Local and remote branches are not pointing to the same commit. Exiting...')
-            print(f'    ➡️  Local commit: {local_commit}')
-            print(f'    ➡️  Remote commit: {remote_commit}')
             raise RobotDevGitError(
-                '❌ Local and remote branches are not pointing to the same commit. Exiting...')
-
-        print(
-            f'✅ Local and remote branches are pointing to the same commit! {local_commit}')
-
-    # To check if the last local commit in the main branch is NOT pointing to a tag
-    def check_if_commit_is_not_pointing_to_a_tag(self, branch_name: str = 'main'):
-
-        if len(self.repo.tags) == 0:
-            print(f'    ❌ There are no tags in the repository.')
-            raise RobotDevGitError(
-                '❌ There are no tags in the repository.'
+                f'Branch \'{DEPLOY_BRANCH}\' of repo \'{self.repo_name}\' not '
+                'updated with the remote.'
             )
+        
 
-        last_local_commit = self.repo.heads[branch_name].commit
-        last_tag: git.Tag = self.repo.tags[-1]
-
-        if last_tag.commit == last_local_commit:
-            print(f'    ❌ The last local commit is pointing to a tag.')
-            print(f'        ➡️  Tag {last_tag}.')
+    def get_tags(self):
+        if not self.repo.tags:
             raise RobotDevGitError(
-                '❌ The last local commit is pointing to a tag.'
+                f'Repository \'{self.repo_name}\' does not have tags.'
             )
-
-        print('✅ The last local commit is not pointing to a tag!')
-
-    # To check if the last local commit in the current branch is pointing to a last tag
-    def check_if_commit_is_pointing_to_a_tag(self):
-
-        if len(self.repo.tags) == 0:
-            raise RobotDevGitError(
-                '❌ There are no tags in the repository.'
-            )
-
-        current_branch = self.repo.active_branch.name
-        last_local_commit = self.repo.heads[current_branch].commit
-
-        last_tag = self.repo.tags[-1]
-
-        if last_tag.commit != last_local_commit:
-            print(f'    ❌ The last local commit is not pointing to a tag.')
-            print(f'        ➡️  Last tag: {last_tag}.')
-            raise RobotDevGitError(
-                f'❌ The last local commit is not pointing to a tag.')
-
-        print('✅ The last local commit is pointing to a tag!')
-
-    def get_all_tags(self):
-        if len(self.repo.tags) == 0:
-            return []
         return self.repo.tags
+
+
+    def get_last_tag(self):
+        return self.get_tags()[-1]
+
+
+    def is_pointing_to_tag(self, branch_name: str = DEPLOY_BRANCH):
+        last_local_commit = self.repo.heads[branch_name].commit
+        last_tag: git.Tag = self.get_last_tag()
+        return last_tag.commit == last_local_commit
+
+
+    def assert_no_pointing_to_tag(self, branch_name: str = DEPLOY_BRANCH):
+        if self.is_pointing_to_tag():
+            raise RobotDevGitError(
+                f'Repository \'{self.repo_name}\' pointing to a tag.'
+            )
+
+
+    def assert_pointing_to_tag(self):
+        if not self.is_pointing_to_tag():
+            raise RobotDevGitError(
+                f'Repository \'{self.repo_name}\' not pointing to a tag.'
+            )
+        
+
 
     def create_commit(self, message: str):
         print(f'    📩 Creating commit with message: {message}')
         self.repo.git.add(all=True)
         self.repo.index.commit(message)
 
+
     def create_tag(self, tag_name: str):
-        print(f'    🏷 Creating tag: {tag_name}')
+        print(f'    🏷  Creating tag: {tag_name}')
         self.repo.create_tag(tag_name)
+
 
     def push_repository(self):
         print('    🚀 Pushing repository...')

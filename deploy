@@ -2,19 +2,19 @@
 
 import argparse
 from robotdevenv.managed_main_execution import managed_main_execution
-from robotdevenv.deploy import RobotDevDeploy
+from robotdevenv.deploy import RobotDevDeployHandler as DeployHandler
 
 
 def deploy_repository():
 
     print()
     print('🤖🤖 UR ROBOT DEVELOPMENT ENVIRONMENT 🤖🤖')
-    print(f'  🦾 Deploy command 🦿')
+    print(f'  🚀 Deploy command 😎')
     print()
 
-    parser: argparse = argparse.ArgumentParser()
-    robot_dev_deploy: RobotDevDeploy = RobotDevDeploy(parser)
-    robot_dev_deploy.deploy_repository()
+    parser = argparse.ArgumentParser()
+    robot_dev_deploy = DeployHandler(parser)
+    robot_dev_deploy.deploy()
 
 
 if __name__ == '__main__':
