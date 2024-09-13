@@ -20,11 +20,18 @@ class RobotDevRobotError(Exception): pass
 class RobotDevRobot(Singleton):
 
     def __init__(self, 
-                parser:argparse.ArgumentParser
+                parser:argparse.ArgumentParser = None,
+                name:str = None,
             ):
-        parser.add_argument('-r', '--robot', type=str, required=True)
-        args = dict(parser.parse_known_args()[0]._get_kwargs())
-        name = args['robot']
+        if parser is not None:
+            parser.add_argument('-r', '--robot', type=str, required=True)
+            args = dict(parser.parse_known_args()[0]._get_kwargs())
+            name = args['robot']
+        elif name == None:
+            raise RobotDevRobotError(
+                'Either \'name\' or \'parser\' argument must be defined.'
+            )
+
         is_local = (name=='localhost')
 
         if is_local:

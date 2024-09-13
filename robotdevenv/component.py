@@ -2,7 +2,6 @@ import yaml
 import argparse
 
 from robotdevenv.robot import RobotDevRobot
-from robotdevenv.singleton import Singleton
 
 from robotdevenv.constants import CONTAINER_NAME_TEMPLATE
 from robotdevenv.constants import ROBOT_GENERIC_STATIC_DATA_PATH
@@ -21,18 +20,24 @@ from robotdevenv.constants import LOCAL_SRC_PATH
 
 
 class RobotDevComponentError(Exception): pass
+class RobotDevComponentNotPlatform(RobotDevComponentError): pass
 
 
-class RobotDevComponent(Singleton):
+class RobotDevComponent:
 
     def __init__(self, 
-                parser:argparse.ArgumentParser,
-                robot:RobotDevRobot,
+                parser:argparse.ArgumentParser=None,
+                full_name:str=None,
+                robot:RobotDevRobot=None,
             ):
-        
-        parser.add_argument('-c', '--component', type=str, required=True)
-        args = dict(parser.parse_known_args()[0]._get_kwargs())
-        full_name = args['component']
+        if parser is not None:
+            parser.add_argument('-c', '--component', type=str, required=True)
+            args = dict(parser.parse_known_args()[0]._get_kwargs())
+            full_name = args['component']
+        elif full_name is None:
+            raise RobotDevComponentError(
+                'Either \'full_name\' or \'parser\' argument must be defined.'
+            )
 
         try:
             repo, name = full_name.split('/')
@@ -94,7 +99,7 @@ class RobotDevComponent(Singleton):
         dockerfile_path = local_path / 'dockerfiles' / \
             f'{robot.platform}.dockerfile'
         if not dockerfile_path.is_file():
-            raise RobotDevComponentError(
+            raise RobotDevComponentNotPlatform(
                 f'Dockerfile: \'{dockerfile_path}\' not found.'
             )
         

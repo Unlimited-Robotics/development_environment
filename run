@@ -14,8 +14,8 @@ class RobotDevRunError(Exception): pass
 def run_command():
 
     parser = argparse.ArgumentParser()
-    robot = Robot(parser)
-    component = Component(parser, robot)
+    robot = Robot(parser=parser)
+    component = Component(parser=parser, robot=robot)
     sync_handler = SyncHandler(component, robot)
     run_handler = RunHandler(component, robot)
 

@@ -2,16 +2,23 @@ import os
 import re
 import yaml
 import lxml
+import lxml.etree
 import argparse
 import paramiko
 from pathlib import Path
 
 from robotdevenv.singleton import Singleton
 from robotdevenv.git import RobotDevRepositoryHandler as RepositoryHandler
+from robotdevenv.robot import RobotDevRobot as Robot
+from robotdevenv.component import RobotDevComponent as Component
+from robotdevenv.docker import RobotDevDockerHandler as DockerHandler
+from robotdevenv.docker import BuildImageType
+from robotdevenv.component import RobotDevComponentNotPlatform
 
 from robotdevenv.constants import LOCAL_SRC_PATH
 from robotdevenv.constants import FOLDER_COMPONENTS
 from robotdevenv.constants import FILE_ROBOTS_PATH
+from robotdevenv.constants import DEPLOY_DEFAULT_BUILDING_HOST
 
 
 class RobotDevDeployError(Exception): pass
@@ -45,6 +52,10 @@ class RobotDevDeployHandler(Singleton):
         self.manifest_path = manifest_path
         self.components_path = components_path
         self.repo = repo
+        self.robot:Robot = None
+        self.components:list[Component] = []
+        self.docker_handlers:list[DockerHandler] = []
+        self.components_paths:list[Path] = []
 
 
     def deploy(self) -> None:
@@ -89,7 +100,14 @@ class RobotDevDeployHandler(Singleton):
 
             print()
 
-        self.ask_building_host()
+        print(f'🛢️ Building docker images...')
+
+        self.components_paths = self.get_components_paths()
+        if self.components_paths:
+            self.ask_building_host()
+            self.create_build_artifacts()
+            self.build_components()
+            self.push_components()
 
         print('🎉🎉 Deploy Process Completed! 🎉🎉')
 
@@ -108,7 +126,7 @@ class RobotDevDeployHandler(Singleton):
             )
 
         # Get manifest version
-        version_manifest = manifest['version']
+        version_manifest = str(manifest['version'])
         if version_manifest == None:
             raise RobotDevDeployError(
                 f'File \'{self.manifest_path}\' does not have \'version\' key.'
@@ -145,6 +163,8 @@ class RobotDevDeployHandler(Singleton):
 
     # Browse through the components folder and get all folders
     def get_components_paths(self) -> list:
+        if not self.components_path.is_dir():
+            return []
         path = Path(self.components_path)
         folder_list = [folder for folder in path.iterdir()
                        if folder.is_dir()]
@@ -301,7 +321,9 @@ class RobotDevDeployHandler(Singleton):
 
             version_tag = root.find('version')
             if version_tag is not None:
-                version_tag.text = self.new_version
+                xml_new_version = self.new_version.replace('.beta','')
+                xml_new_version += '.0'
+                version_tag.text = xml_new_version
                 xml_str = lxml.etree.tostring(tree, pretty_print=True,
                                               xml_declaration=True,
                                               encoding='utf-8'
@@ -335,8 +357,12 @@ class RobotDevDeployHandler(Singleton):
 
         print()
         build_host: str = input(
-            f'🎹 Please enter the name of the building host: '
+            '🎹 Please enter the name of the building host '
+            f'[{DEPLOY_DEFAULT_BUILDING_HOST}]: '
         )
+
+        if not build_host:
+            build_host = DEPLOY_DEFAULT_BUILDING_HOST
 
         if (build_host != 'localhost') and (build_host not in available_hosts):
             raise RobotDevDeployError(f'Host {build_host} not found.')
@@ -398,7 +424,73 @@ class RobotDevDeployHandler(Singleton):
         hosts = [host for host in hosts if '*' not in host]
 
         return hosts
+    
+
+    def create_build_artifacts(self):
+        self.robot = Robot(name=self.build_host)
+        self.components = []
+        self.docker_handlers = []
+
+        print(f'🧩 Collecting components:')
+        print()
+
+        for component_path in self.components_paths:
+            component_name = component_path.name
+            print(f'  - {component_name}: ', end='')
+            try:
+                self.components.append(Component(
+                    full_name=f'{self.repo_name}/{component_path.name}',
+                    robot=self.robot,
+                ))
+                self.docker_handlers.append(DockerHandler(
+                    component=self.components[-1], robot=self.robot
+                ))
+                if self.components[-1].dockerfile_prod_path is None:
+                    print('⚠️  Not production dockerfile.')
+                else:
+                    print('✅ OK.')
+            except RobotDevComponentNotPlatform:
+                print(
+                    '❌ Not dockerfile for platform '
+                    f'\'{self.robot.platform}\'.'
+                )
+                continue
+        print()
 
 
-    # def build_components(self):
+    def build_components(self):
+        print(f'🛠️ Building components...')
+        print()
+        
+        for docker_handler in self.docker_handlers:
+            component = docker_handler.component
+            print()
+            print(f'🧩 Component: \'{component.full_name}\'')
+            print()
+            print(f'  Development image...')
+            print()
+            docker_handler.build_image(BuildImageType.DEVEL)
+            if component.dockerfile_prod_path is not None:
+                print()
+                print(f'  Production image...')
+                docker_handler.build_image(BuildImageType.PROD)
+        print()
 
+
+    def push_components(self):
+        print(f'⬆️  Pushing components...')
+        print()
+        
+        for docker_handler in self.docker_handlers:
+            component = docker_handler.component
+            print()
+            print(f'🧩 Component: \'{component.full_name}\'')
+            print()
+            print(f'  Development image...')
+            print()
+            docker_handler.push_image(BuildImageType.DEVEL)
+            if component.dockerfile_prod_path is not None:
+                print()
+                print(f'  Production image...')
+                docker_handler.push_image(BuildImageType.PROD)
+        print()

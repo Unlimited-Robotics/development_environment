@@ -1,39 +1,52 @@
 import subprocess
 import json
 from typing import List, Dict
+from enum import Enum
 
 from robotdevenv.component import RobotDevComponent as Component
 from robotdevenv.robot import RobotDevRobot as Robot
-from robotdevenv.singleton import Singleton
 
 from robotdevenv.constants import DEV_ENV_PATH
 from robotdevenv.constants import FOLDER_SRC
+from robotdevenv.constants import DEPLOY_DOCKER_REPO_ENDPOINT
 
 
-class RobotDevDockerHandler(Singleton):
+class BuildImageType(Enum):
+    DEVEL = 0
+    PROD = 1
+
+
+class RobotDevDockerHandler:
 
     def __init__(self,
                 component:Component,
                 robot:Robot,
             ):
-        self.__component:Component = component
-        self.__robot:Robot = robot
-
-
-    def build_dev_image(self):
+        self.component:Component = component
+        self.robot:Robot = robot
         
-        docker_build_context_path = self.__component.local_path
+    
+    def build_image(self, build_type:BuildImageType):
+
+        if build_type==BuildImageType.DEVEL:
+            docker_build_context_path = self.component.local_path
+            tag = self.component.image_dev_name
+            dockerfile = self.component.dockerfile_path
+        elif build_type==BuildImageType.PROD:
+            docker_build_context_path = DEV_ENV_PATH / FOLDER_SRC
+            tag = self.component.image_prod_name
+            dockerfile = self.component.dockerfile_prod_path
 
         docker_build_command = f'cd {DEV_ENV_PATH} && '
 
-        if not self.__robot.is_local:
-            docker_build_command += f'DOCKER_HOST=ssh://{self.__robot.name} '
+        if not self.robot.is_local:
+            docker_build_command += f'DOCKER_HOST=ssh://{self.robot.name} '
 
         docker_build_command += (
             'docker build '
-            '--progress=plain '
-            f'--tag {self.__component.image_dev_name} '
-            f'-f {self.__component.dockerfile_path} '
+            # '--progress=plain '
+            f'--tag {tag} '
+            f'-f {dockerfile} '
             f'{docker_build_context_path}'
         )
 
@@ -44,22 +57,25 @@ class RobotDevDockerHandler(Singleton):
         )
         print()
 
+    
+    def push_image(self, build_type:BuildImageType):
 
-    def build_prod_image(self):
-        
-        docker_build_context_path = DEV_ENV_PATH / FOLDER_SRC
+        if build_type==BuildImageType.DEVEL:
+            tag = self.component.image_dev_name
+        elif build_type==BuildImageType.PROD:
+            tag = self.component.image_prod_name
 
         docker_build_command = f'cd {DEV_ENV_PATH} && '
 
-        if not self.__robot.is_local:
-            docker_build_command += f'DOCKER_HOST=ssh://{self.__robot.name} '
+        if self.robot.is_local:
+            ssh_prefix = ''
+        else:
+            ssh_prefix = f'DOCKER_HOST=ssh://{self.robot.name}'
 
         docker_build_command += (
-            'docker build '
-            '--progress=plain '
-            f'--tag {self.__component.image_prod_name} '
-            f'-f {self.__component.dockerfile_prod_path} '
-            f'{docker_build_context_path}'
+            f'{ssh_prefix} docker tag {tag} {DEPLOY_DOCKER_REPO_ENDPOINT}/{tag} && '
+            f'{ssh_prefix} docker push {DEPLOY_DOCKER_REPO_ENDPOINT}/{tag} && '
+            f'{ssh_prefix} docker rmi {DEPLOY_DOCKER_REPO_ENDPOINT}/{tag}'
         )
 
         subprocess.run(
@@ -68,14 +84,15 @@ class RobotDevDockerHandler(Singleton):
             check=True,
         )
         print()
+
 
 
     def get_running_container_info(self):
         docker_command = ''
-        if not self.__robot.is_local:
-            docker_command += f'DOCKER_HOST=ssh://{self.__robot.name} \\\n'
+        if not self.robot.is_local:
+            docker_command += f'DOCKER_HOST=ssh://{self.robot.name} \\\n'
         docker_command += "docker inspect " 
-        docker_command += self.__component.container_name
+        docker_command += self.component.container_name
 
         try:
             process = subprocess.run(
@@ -101,11 +118,11 @@ class RobotDevDockerHandler(Singleton):
 
         docker_command = ''
 
-        if self.__component.display:
+        if self.component.display:
             docker_command += 'DISPLAY=:0 xhost +local:* && '
 
-        if not self.__robot.is_local:
-            docker_command += f'DOCKER_HOST=ssh://{self.__robot.name} \\\n'
+        if not self.robot.is_local:
+            docker_command += f'DOCKER_HOST=ssh://{self.robot.name} \\\n'
 
         docker_command += (
                 'docker run \\\n'
@@ -115,10 +132,10 @@ class RobotDevDockerHandler(Singleton):
                 '  --pid=host \\\n'
             )
 
-        if self.__robot.platform == 'jetsonorinagx':
+        if self.robot.platform == 'jetsonorinagx':
             docker_command += '  --runtime nvidia \\\n'
 
-        docker_command += f'  --name {self.__component.container_name}\\\n'
+        docker_command += f'  --name {self.component.container_name}\\\n'
 
         # Interactive mode
         if interactive:
@@ -133,23 +150,23 @@ class RobotDevDockerHandler(Singleton):
             docker_command += '  --rm \\\n'
 
         # Display
-        if self.__component.display:
+        if self.component.display:
             docker_command +=  '  -e XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \\\n'
             docker_command += f'  -e=DISPLAY=:0 \\\n'
             docker_command +=  '  -v=${XDG_RUNTIME_DIR}/gdm/Xauthority:/root/.Xauthority \\\n'
             docker_command += f'  -v=/tmp/.X11-unix:/tmp/.X11-unix:rw  \\\n'
 
         # Sound
-        if self.__component.sound:
+        if self.component.sound:
             docker_command +=  '  -v /etc/alsa:/etc/alsa \\\n'
             docker_command +=  '  -v /usr/share/alsa:/usr/share/alsa \\\n'
             docker_command +=  '  -e PULSE_SERVER=unix:${XDG_RUNTIME_DIR}/pulse/native \\\n'
             docker_command +=  '  -e PULSE_COOKIE=/root/.config/pulse/cookie \\\n'
             docker_command +=  '  -v ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native \\\n'
-            docker_command +=  f'  -v {self.__robot.get_remote_home()}/.config/pulse/cookie:/root/.config/pulse/cookie \\\n'
+            docker_command +=  f'  -v {self.robot.get_remote_home()}/.config/pulse/cookie:/root/.config/pulse/cookie \\\n'
 
         # Devices
-        if self.__component.devices:
+        if self.component.devices:
             docker_command +=  '  -v /dev:/dev \\\n'
             docker_command +=  '  -v /run/udev:/run/udev:ro \\\n'
         
@@ -167,7 +184,7 @@ class RobotDevDockerHandler(Singleton):
             docker_command += f'  -v={":".join(volume_str)} \\\n'
 
         # Image
-        docker_command += f'  {self.__component.image_dev_name} \\\n'
+        docker_command += f'  {self.component.image_dev_name} \\\n'
 
         # Command
         docker_command += f'  \\\n{command}\\\n \\\n'
@@ -190,15 +207,15 @@ class RobotDevDockerHandler(Singleton):
 
         docker_command = ''
 
-        if not self.__robot.is_local:
-            docker_command += f'DOCKER_HOST=ssh://{self.__robot.name} \\\n'
+        if not self.robot.is_local:
+            docker_command += f'DOCKER_HOST=ssh://{self.robot.name} \\\n'
 
         docker_command += 'docker exec '
 
         if interactive:
             docker_command += '-it '
 
-        docker_command += f'{self.__component.container_name} {command}'
+        docker_command += f'{self.component.container_name} {command}'
 
         try:
             subprocess.run(

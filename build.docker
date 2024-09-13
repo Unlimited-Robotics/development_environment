@@ -5,6 +5,7 @@ import argparse
 from robotdevenv.component import RobotDevComponent as Component
 from robotdevenv.robot import RobotDevRobot as Robot
 from robotdevenv.docker import RobotDevDockerHandler as DockerHandler
+from robotdevenv.docker import BuildImageType
 
 
 class RobotDevBuildDockerError(Exception): pass
@@ -13,8 +14,8 @@ class RobotDevBuildDockerError(Exception): pass
 def build_component():
 
     parser = argparse.ArgumentParser()
-    robot = Robot(parser)
-    component = Component(parser, robot)
+    robot = Robot(parser=parser)
+    component = Component(parser=parser, robot=robot)
     docker_handler = DockerHandler(component, robot)
 
     print()
@@ -31,10 +32,9 @@ def build_component():
     parser.add_argument('-p', '--prod', action='store_true')
     args = dict(parser.parse_known_args()[0]._get_kwargs())
 
-    if args['prod']:
-        docker_handler.build_prod_image()
-    else:
-        docker_handler.build_dev_image()
+    build_type = BuildImageType.PROD if args['prod'] else BuildImageType.DEVEL
+
+    docker_handler.build_image(build_type=build_type)
 
 
 if __name__ == "__main__":

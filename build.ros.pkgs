@@ -16,8 +16,8 @@ class RobotDevBuildROSPkgsError(Exception): pass
 def build_ros_packages_component():
 
     parser = argparse.ArgumentParser()
-    robot = Robot(parser)
-    component = Component(parser, robot)
+    robot = Robot(parser=parser)
+    component = Component(parser=parser, robot=robot)
     sync_handler = SyncHandler(component, robot)
     run_handler = RunHandler(component, robot)
 

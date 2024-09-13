@@ -12,8 +12,8 @@ class RobotDevSyncError(Exception): pass
 def sync_component():
     
     parser = argparse.ArgumentParser()
-    robot = Robot(parser)
-    component = Component(parser, robot)
+    robot = Robot(parser=parser)
+    component = Component(parser=parser, robot=robot)
     sync_handler = SyncHandler(component, robot)
     
     print()
