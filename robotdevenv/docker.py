@@ -42,13 +42,20 @@ class RobotDevDockerHandler:
         if not self.robot.is_local:
             docker_build_command += f'DOCKER_HOST=ssh://{self.robot.name} '
 
+        cache_reference = f'{DEPLOY_DOCKER_REPO_ENDPOINT}/{self.component.image_dev_name+".cache"}'
+        print(cache_reference)
+
         docker_build_command += (
-            'docker build '
+            'docker buildx build '
             # '--progress=plain '
             f'--tag {tag} '
+            f'--cache-to mode=max,image-manifest=true,oci-mediatypes=true,type=registry,ref={cache_reference} '
+            f'--cache-from type=registry,ref={cache_reference} '
             f'-f {dockerfile} '
             f'{docker_build_context_path}'
         )
+
+        print(docker_build_command)
 
         subprocess.run(
             docker_build_command, 
