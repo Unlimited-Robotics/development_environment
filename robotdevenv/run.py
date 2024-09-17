@@ -34,9 +34,9 @@ class RobotDevRunHandler(Singleton):
                 component:Component,
                 robot:Robot,
             ):
-        self.__component = component
+        self.component = component
         self.__robot = robot
-        self.__docker_handler = DockerHandler(self.__component, self.__robot)
+        self.docker_handler = DockerHandler(self.component, self.__robot)
 
 
     def __update_env_from_file(self,
@@ -64,8 +64,26 @@ class RobotDevRunHandler(Singleton):
             raise RobotDevRunError(
                 f'Configuration origin \'{config_origin}\' not valid.'
             )
+        
+        # Check if there is a container running the base image (same component)
+        containers_info = \
+            self.docker_handler.get_running_containers_and_images()
+        base_image_name = self.component.image_dev_name.split(':')[0].strip()
+        base_tag_name = self.component.image_dev_name.split(':')[1].strip()
 
-        if(container_info := self.__docker_handler.get_running_container_info()) is None:
+        for info in containers_info:
+            image_name = info[1]
+            tag_name = info[2]
+            if (image_name==base_image_name) and (base_tag_name!=tag_name):
+                container_name = info[0]
+                raise RobotDevRunError(
+                    f'Component \'{image_name}\' already running in the container \'{container_name}\' with the tag \'{tag_name}\''
+                )
+        
+        container_info = self.docker_handler.get_running_container_info()
+
+        if container_info is None:
+            # The container does not exist
 
             # ROS Domain ID definition
             with open(FILE_ROS_DOMAINS_PATH, 'r') as file:
@@ -80,7 +98,7 @@ class RobotDevRunHandler(Singleton):
             # Config folder definition
             config_path_global = GLOBAL_CONFIG_PATH
             config_path_devenv = DEV_ENV_PATH / FOLDER_CONFIG
-            config_path_component = self.__component.local_path / FOLDER_CONFIG
+            config_path_component = self.component.local_path / FOLDER_CONFIG
 
             if config_origin=='global':
                 config_path=config_path_global
@@ -117,7 +135,7 @@ class RobotDevRunHandler(Singleton):
             env_vars_from_files = {}
             env_files_paths = []
 
-            local_env_path = self.__component.local_path / 'env'
+            local_env_path = self.component.local_path / 'env'
             if local_env_path.is_file():
                 env_files_paths.append(local_env_path)
                 self.__update_env_from_file(env_vars_from_files, local_env_path)
@@ -128,7 +146,7 @@ class RobotDevRunHandler(Singleton):
                 self.__update_env_from_file(env_vars_from_files, local_env_path)
             
             local_env_path = DEV_ENV_PATH / FOLDER_CONFIG / 'env' / \
-                            f'{self.__component.container_name}.env'
+                            f'{self.component.container_name}.env'
             if local_env_path.is_file():
                 env_files_paths.append(local_env_path)
                 self.__update_env_from_file(env_vars_from_files, local_env_path)
@@ -140,7 +158,7 @@ class RobotDevRunHandler(Singleton):
 
             env_vars = {
                 'IDHOST': self.__robot.name,
-                'IDCOMPONENT': self.__component.name,
+                'IDCOMPONENT': self.component.name,
                 'ROBOT_NAME': ROBOT_NAME,
             }
 
@@ -152,17 +170,17 @@ class RobotDevRunHandler(Singleton):
                 env_vars['ROS_DOMAIN_ID'] = ros_domain_id
 
             # Volumes
-            volumes = self.__component.get_volumes()
+            volumes = self.component.get_volumes()
             volumes.append(
                 (config_path, ROBOT_CONFIG_PATH, 'ro')
             )
 
-            if (self.__component.local_path / FOLDER_COMMANDS).is_dir():
+            if (self.component.local_path / FOLDER_COMMANDS).is_dir():
                 volumes.append(
-                    (self.__component.host_path / FOLDER_COMMANDS, ROBOT_COMMANDS_PATH)
+                    (self.component.host_path / FOLDER_COMMANDS, ROBOT_COMMANDS_PATH)
                 )
 
-            self.__docker_handler.run_command(
+            self.docker_handler.run_command(
                 command=command,
                 env_files=env_files_paths,
                 env_vars=env_vars,
@@ -172,21 +190,14 @@ class RobotDevRunHandler(Singleton):
             )
 
         else:
-            running_image = container_info['Config']['Image']
-            if running_image == self.__component.image_dev_name:
-                if not command:
-                    command = 'bash'
-                print(
-                    f'ℹ️  Container \'{self.__component.container_name}\' already running, '
-                    f'executing \'{command}\' inside it\n'
-                )
-                self.__docker_handler.exec_command(
-                    command=command, 
-                    interactive=interactive
-                )
-            else:
-                raise RobotDevRunError(
-                    f'Container \'{self.__component.container_name}\' '
-                    'already running another version of the image: '
-                    f'\'{running_image}\'.'
-                )
+
+            if not command:
+                command = 'bash'
+            print(
+                f'ℹ️  Container \'{self.component.container_name}\' already running, '
+                f'executing \'{command}\' inside it\n'
+            )
+            self.docker_handler.exec_command(
+                command=command, 
+                interactive=interactive
+            )

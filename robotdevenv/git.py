@@ -60,7 +60,6 @@ class RobotDevRepositoryHandler:
 
     def assert_no_local_changes(self):
         if self.repo.is_dirty():
-            print(f'There are uncommitted changes.')
             raise RobotDevGitError(
                 f'Repository \'{self.repo_name}\' has uncommited changes.'
             )

@@ -1,7 +1,9 @@
 import yaml
 import argparse
 
-from robotdevenv.robot import RobotDevRobot
+from robotdevenv.robot import RobotDevRobot as Robot
+from robotdevenv.git import RobotDevRepositoryHandler as RepoHandler
+from robotdevenv.git import RobotDevGitError
 
 from robotdevenv.constants import CONTAINER_NAME_TEMPLATE
 from robotdevenv.constants import ROBOT_GENERIC_STATIC_DATA_PATH
@@ -28,7 +30,7 @@ class RobotDevComponent:
     def __init__(self, 
                 parser:argparse.ArgumentParser=None,
                 full_name:str=None,
-                robot:RobotDevRobot=None,
+                robot:Robot=None,
             ):
         if parser is not None:
             parser.add_argument('-c', '--component', type=str, required=True)
@@ -40,14 +42,14 @@ class RobotDevComponent:
             )
 
         try:
-            repo, name = full_name.split('/')
+            repo_name, name = full_name.split('/')
         except ValueError:
             raise RobotDevComponentError(
                 f'Invalid component name \'{full_name}\'. It must have '
                 'the format \'<repo>/<component>\'.'
             )
         
-        repo_path = LOCAL_SRC_PATH / repo
+        repo_path = LOCAL_SRC_PATH / repo_name
         local_path = repo_path / 'components' / name
 
         component_desc_path = local_path / f'{name}.yaml'
@@ -108,23 +110,31 @@ class RobotDevComponent:
         if not dockerfile_prod_path.is_file():
             dockerfile_prod_path = None
 
-        image_dev_name = f'{".".join(repo.split("_", 2))}.{name}:{robot.platform}.{version_dev}'
-        image_prod_name = f'{".".join(repo.split("_", 2))}.{name}:{robot.platform}.{version_prod}'
+        image_dev_name = f'{".".join(repo_name.split("_", 2))}.{name}:{robot.platform}.{version_dev}'
+        image_prod_name = f'{".".join(repo_name.split("_", 2))}.{name}:{robot.platform}.{version_prod}'
+
+        repo = RepoHandler(repo_path)
+        try:
+            repo.assert_deploy_branch()
+            repo.assert_no_local_changes()
+            repo.assert_pointing_to_tag()
+        except RobotDevGitError:
+            image_dev_name += '.changes'
 
         container_name = CONTAINER_NAME_TEMPLATE.format(
-            repo=repo,
+            repo=repo_name,
             component=name,
         )
 
         host_path = \
-            robot.get_host_ws_path() / FOLDER_SRC / repo / 'components' / name
+            robot.get_host_ws_path() / FOLDER_SRC / repo_name / 'components' / name
 
         # Private attributes
-        self.__robot = robot
+        self.robot = robot
 
         # Public attributes
         self.full_name = full_name
-        self.repo = repo
+        self.repo_name = repo_name
         self.name = name
         self.local_path = local_path
         self.host_path = host_path
@@ -144,7 +154,7 @@ class RobotDevComponent:
 
     def get_volumes(self):
 
-        host_ws_path = self.__robot.get_host_ws_path()
+        host_ws_path = self.robot.get_host_ws_path()
 
         ## General build folder
         dir_host_build_base = host_ws_path / FOLDER_BUILD / self.full_name

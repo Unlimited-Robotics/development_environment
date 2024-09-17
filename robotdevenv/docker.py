@@ -105,6 +105,35 @@ class RobotDevDockerHandler:
             return json.loads(process.stdout)[0]
         except subprocess.CalledProcessError:
             return None
+        
+
+    def get_running_containers_and_images(self):
+        docker_command = ''
+        if not self.robot.is_local:
+            docker_command += f'DOCKER_HOST=ssh://{self.robot.name} \\\n'
+        docker_command += 'docker ps -a --format \'{{.Names}}: {{.Image}}\''
+        try:
+            process = subprocess.run(
+                docker_command,
+                shell=True, 
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            containers_list = []
+            for line in process.stdout.split('\n'):
+                if line.strip():
+                    line_split = line.split(':')
+                    if len(line_split)==3:
+                        containers_list.append((
+                            line_split[0].strip(),
+                            line_split[1].strip(),
+                            line_split[2].strip(),
+                        ))
+            return containers_list
+
+        except subprocess.CalledProcessError:
+            return []
 
 
     def run_command(self,
