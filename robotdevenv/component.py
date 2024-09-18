@@ -173,6 +173,7 @@ class RobotDevComponent:
                 (dir_host_generic_persistent_data, ROBOT_GENERIC_PERSISTENT_DATA_PATH),
                 (dir_host_component_static_data, ROBOT_COMPONENT_STATIC_DATA_PATH, 'ro'),
                 (dir_host_component_persistent_data, ROBOT_COMPONENT_PERSISTENT_DATA_PATH),
+                ('/sys/kernel/debug/clk', '/clk', 'ro'),
             ]
             
         if self.src:
