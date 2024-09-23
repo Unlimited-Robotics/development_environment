@@ -1,4 +1,3 @@
-import os
 import yaml
 import pathlib
 
@@ -12,15 +11,8 @@ from robotdevenv.constants import FILE_ROS_DOMAINS_PATH
 from robotdevenv.constants import DEV_ENV_PATH
 from robotdevenv.constants import FOLDER_CONFIG
 from robotdevenv.constants import ROBOT_NAME
-from robotdevenv.constants import ROBOT_BASE_PATH
-from robotdevenv.constants import ROBOT_GENERIC_STATIC_DATA_PATH
-from robotdevenv.constants import ROBOT_GENERIC_PERSISTENT_DATA_PATH
-from robotdevenv.constants import ROBOT_COMPONENT_STATIC_DATA_PATH
-from robotdevenv.constants import ROBOT_COMPONENT_PERSISTENT_DATA_PATH
 from robotdevenv.constants import ROBOT_CONFIG_PATH
 from robotdevenv.constants import ROBOT_COMMANDS_PATH
-from robotdevenv.constants import ROBOT_BUILD_PATH
-from robotdevenv.constants import ROBOT_SRC_PATH
 from robotdevenv.constants import FOLDER_COMMANDS
 from robotdevenv.constants import GLOBAL_CONFIG_PATH
 
@@ -60,7 +52,7 @@ class RobotDevRunHandler(Singleton):
             ):
         
         if config_origin is not None and \
-                config_origin not in ['global', 'devenv', 'component']:
+                config_origin not in ['global', 'devenv']:
             raise RobotDevRunError(
                 f'Configuration origin \'{config_origin}\' not valid.'
             )
@@ -100,10 +92,7 @@ class RobotDevRunHandler(Singleton):
             config_path_devenv = DEV_ENV_PATH / FOLDER_CONFIG
             config_path_component = self.component.local_path / FOLDER_CONFIG
 
-            if config_origin=='global':
-                config_path=config_path_global
-                print('⚙️  Using global configuration folder:')
-            elif config_origin=='devenv':
+            if config_origin=='devenv':
                 if not config_path_devenv.is_dir():
                     raise RobotDevRunError(
                         f'Configuration folder not found in development '
@@ -113,21 +102,9 @@ class RobotDevRunHandler(Singleton):
                 print(
                     '⚙️  Using configuration folder from development environment:'
                 )
-            elif config_origin=='component':
-                if not config_path_component.is_dir():
-                    raise RobotDevRunError(
-                        f'Configuration folder not found in component folder'
-                    )
-                config_path=config_path_component
-                print('⚙️  Using configuration folder from component:')
-            elif config_path_component.is_dir():
-                config_path = config_path_component
-                print('⚙️  Using configuration folder from component:')
-            elif config_path_devenv.is_dir():
-                config_path = config_path_devenv
-                print(
-                    '⚙️  Using configuration folder from development environment:'
-                )
+            else: # global
+                config_path=config_path_global
+                print('⚙️  Using global configuration folder:')
             print(f'   - {config_path}')
             print()
 
