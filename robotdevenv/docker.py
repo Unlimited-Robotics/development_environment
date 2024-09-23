@@ -43,8 +43,11 @@ class RobotDevDockerHandler:
             docker_build_command += f'DOCKER_HOST=ssh://{self.robot.name} '
 
         docker_build_command += (
-            'docker build '
-            # '--progress=plain '
+            'docker buildx build '
+            '--progress=plain '
+            '--cache=enabled'
+            f'--cache-to mode=max,image-manifest=true,oci-mediatypes=true,type=registry,ref={aws_account_id}.dkr.ecr.{aws_region}.amazonaws.com/{repository}:cache'
+            f'--cache-from type=registry,ref={aws_account_id}.dkr.ecr.{aws_region}.amazonaws.com/{repository}:cache'
             f'--tag {tag} '
             f'-f {dockerfile} '
             f'{docker_build_context_path}'
