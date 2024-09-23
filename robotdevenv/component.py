@@ -19,6 +19,7 @@ from robotdevenv.constants import FOLDER_COMPONENT_STATIC_DATA
 from robotdevenv.constants import FOLDER_GENERIC_STATIC_DATA
 from robotdevenv.constants import FOLDER_COMPONENT_PERSISTENT_DATA
 from robotdevenv.constants import LOCAL_SRC_PATH
+from robotdevenv.constants import DEPLOY_DOCKER_REPO_ENDPOINT
 
 
 class RobotDevComponentError(Exception): pass
@@ -110,8 +111,10 @@ class RobotDevComponent:
         if not dockerfile_prod_path.is_file():
             dockerfile_prod_path = None
 
-        image_dev_name = f'{".".join(repo_name.split("_", 2))}.{name}:{robot.platform}.{version_dev}'
-        image_prod_name = f'{".".join(repo_name.split("_", 2))}.{name}:{robot.platform}.{version_prod}'
+        container_repo_name = f'{".".join(repo_name.split("_", 2))}.{name}'
+        image_dev_name = f'{container_repo_name}:{robot.platform}.{version_dev}'
+        image_prod_name = f'{container_repo_name}:{robot.platform}.{version_prod}'
+        cache_reference = f'{DEPLOY_DOCKER_REPO_ENDPOINT}/{container_repo_name}:cache'
 
         repo = RepoHandler(repo_path)
         try:
@@ -150,6 +153,7 @@ class RobotDevComponent:
         self.image_dev_name = image_dev_name
         self.image_prod_name = image_prod_name
         self.container_name = container_name
+        self.cache_reference = cache_reference
 
 
     def get_volumes(self):

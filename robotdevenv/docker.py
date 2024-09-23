@@ -8,7 +8,6 @@ from robotdevenv.robot import RobotDevRobot as Robot
 
 from robotdevenv.constants import DEV_ENV_PATH
 from robotdevenv.constants import FOLDER_SRC
-from robotdevenv.constants import DEPLOY_DOCKER_REPO_ENDPOINT
 
 
 class BuildImageType(Enum):
@@ -26,7 +25,7 @@ class RobotDevDockerHandler:
         self.robot:Robot = robot
         
     
-    def build_image(self, build_type:BuildImageType):
+    def build_image(self, build_type:BuildImageType, cloud_cache=False):
 
         if build_type==BuildImageType.DEVEL:
             docker_build_context_path = self.component.local_path
@@ -42,20 +41,18 @@ class RobotDevDockerHandler:
         if not self.robot.is_local:
             docker_build_command += f'DOCKER_HOST=ssh://{self.robot.name} '
 
-        cache_reference = f'{DEPLOY_DOCKER_REPO_ENDPOINT}/{self.component.image_dev_name+".cache"}'
-        print(cache_reference)
-
         docker_build_command += (
             'docker buildx build '
-            # '--progress=plain '
+            f'--output type=docker '
             f'--tag {tag} '
-            f'--cache-to mode=max,image-manifest=true,oci-mediatypes=true,type=registry,ref={cache_reference} '
-            f'--cache-from type=registry,ref={cache_reference} '
-            f'-f {dockerfile} '
-            f'{docker_build_context_path}'
         )
 
-        print(docker_build_command)
+        if cloud_cache:
+            docker_build_command += f'--cache-to mode=max,image-manifest=true,oci-mediatypes=true,type=registry,ref={self.component.cache_reference} '
+            docker_build_command += f'--cache-from type=registry,ref={self.component.cache_reference} '
+
+        docker_build_command += f'-f {dockerfile} '
+        docker_build_command += f'{docker_build_context_path}'
 
         subprocess.run(
             docker_build_command, 

@@ -469,11 +469,11 @@ class RobotDevDeployHandler(Singleton):
             print()
             print(f'  Development image...')
             print()
-            docker_handler.build_image(BuildImageType.DEVEL)
+            docker_handler.build_image(BuildImageType.DEVEL, cloud_cache=True)
             if component.dockerfile_prod_path is not None:
                 print()
                 print(f'  Production image...')
-                docker_handler.build_image(BuildImageType.PROD)
+                docker_handler.build_image(BuildImageType.PROD, cloud_cache=True)
         print()
 
 
