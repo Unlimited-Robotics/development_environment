@@ -9,6 +9,7 @@ from robotdevenv.robot import RobotDevRobot as Robot
 from robotdevenv.constants import DEV_ENV_PATH
 from robotdevenv.constants import FOLDER_SRC
 from robotdevenv.constants import DEPLOY_DOCKER_REPO_ENDPOINT
+from robotdevenv.constants import GENERIC_PROD_DOCKERFILE
 
 
 class BuildImageType(Enum):
@@ -26,7 +27,7 @@ class RobotDevDockerHandler:
         self.robot:Robot = robot
         
     
-    def build_image(self, build_type:BuildImageType):
+    def build_image(self, build_type:BuildImageType, metadata={}):
 
         if build_type==BuildImageType.DEVEL:
             docker_build_context_path = self.component.local_path
@@ -35,7 +36,7 @@ class RobotDevDockerHandler:
         elif build_type==BuildImageType.PROD:
             docker_build_context_path = DEV_ENV_PATH / FOLDER_SRC
             tag = self.component.image_prod_name
-            dockerfile = self.component.dockerfile_prod_path
+            dockerfile = GENERIC_PROD_DOCKERFILE
 
         docker_build_command = f'cd {DEV_ENV_PATH} && '
 
@@ -44,11 +45,23 @@ class RobotDevDockerHandler:
 
         docker_build_command += (
             'docker build '
+            f'--build-arg REGISTRY_ENDPOINT={DEPLOY_DOCKER_REPO_ENDPOINT} '
+            f'--build-arg REPOS_LIST=\'{" ".join(self.component.src)}\' '
+            f'--build-arg PACKAGES_LIST=\'{" ".join(self.component.ros_pkgs)}\' '
             # '--progress=plain '
             f'--tag {tag} '
-            f'-f {dockerfile} '
-            f'{docker_build_context_path}'
         )
+
+        for key in metadata:
+            docker_build_command += f'--build-arg {key}=\'{metadata[key]}\' '
+
+        if build_type==BuildImageType.PROD:
+            docker_build_command += f'--build-arg FROM={self.component.image_dev_name} '
+
+        docker_build_command += f'-f {dockerfile} '
+        docker_build_command += f'{docker_build_context_path}'
+
+        print(docker_build_command)
 
         subprocess.run(
             docker_build_command, 

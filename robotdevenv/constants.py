@@ -50,6 +50,7 @@ DEPLOY_BRANCH = 'main'
 # DEPLOY_DEFAULT_BUILDING_HOST = 'localhost'
 DEPLOY_DEFAULT_BUILDING_HOST = 'JETSON_BOGOTA'
 DEPLOY_DOCKER_REPO_ENDPOINT = '608922983796.dkr.ecr.eu-central-1.amazonaws.com'
+GENERIC_PROD_DOCKERFILE = DEV_ENV_PATH / 'robotdevenv' / 'generic_dockerfiles' / 'production.dockerfile'
 
 # REMOTE HOST 
 REMOTE_HOST_WORKSPACES_FOLDER_NAME = 'dev_workspaces'

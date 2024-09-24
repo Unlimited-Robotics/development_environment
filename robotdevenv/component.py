@@ -140,6 +140,7 @@ class RobotDevComponent:
         self.host_path = host_path
         self.version_dev = version_dev
         self.version_prod = version_prod
+        self.component_desc = component_desc
         self.src = src
         self.ros_pkgs = ros_pkgs
         self.display = display

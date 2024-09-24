@@ -2,6 +2,7 @@ import os
 import re
 import yaml
 import lxml
+import json
 import lxml.etree
 import argparse
 import paramiko
@@ -41,6 +42,9 @@ class RobotDevDeployHandler(Singleton):
         components_path = repo_path / FOLDER_COMPONENTS
         repo = RepositoryHandler(repo_path)
 
+        self.dependencies_versions: dict = {}
+        self.manifest: dict = {}
+
         # Public attributes
         self.repo_name = repo_name
         self.skip_repo_steps = args['skip_repo_steps']
@@ -59,15 +63,18 @@ class RobotDevDeployHandler(Singleton):
 
 
     def deploy(self) -> None:
+
+        self.read_manifest()
         
+        print(f'🔁  Retrieving \'{self.repo_name}\' repository information...')
+        self.repo.fetch()
+        # Main repository asserts
+        print(f'🤨  Checking \'{self.repo_name}\' repository status...')
+        self.repo.assert_deploy_branch()
+        self.repo.assert_no_local_changes()
+        self.repo.assert_branch_updated()
+
         if not self.skip_repo_steps:
-            print(f'🔁  Retrieving \'{self.repo_name}\' repository information...')
-            self.repo.fetch()
-            # Main repository asserts
-            print(f'🤨  Checking \'{self.repo_name}\' repository status...')
-            self.repo.assert_deploy_branch()
-            self.repo.assert_no_local_changes()
-            self.repo.assert_branch_updated()
             self.repo.assert_no_pointing_to_tag()
             self.last_tag_same_as_manifest()
             self.last_version = str(self.repo.get_last_tag())
@@ -157,6 +164,9 @@ class RobotDevDeployHandler(Singleton):
         self.__fetch_dependency_repo(deps_repos)
         self.__check_changes_whitout_commit(deps_repos)
         self.__check_pointing_to_tag(deps_repos)
+
+        for repo in deps_repos:
+            self.dependencies_versions[repo.repo_name] = str(repo.get_last_tag())
 
         print()
 
@@ -281,23 +291,26 @@ class RobotDevDeployHandler(Singleton):
                 exit()
 
 
-    def update_manifest(self) -> None:
-
-        manifest: dict = {}
-
+    def read_manifest(self) -> None:
         # Get manifest file in the repo folder
         try:
             with open(self.manifest_path, 'r') as file:
-                manifest = yaml.safe_load(file)
+                self.manifest = yaml.safe_load(file)
         except FileNotFoundError:
             raise RobotDevDeployError(
                 f'File \'{self.manifest_path}\' not found.'
             )
 
+
+    def update_manifest(self) -> None:
+
         # Update manifest version
-        manifest['version'] = self.new_version
+        self.manifest['version'] = self.new_version
+
+        self.manifest['depedencies'] = self.dependencies_versions
+
         with open(self.manifest_path, 'w') as file:
-            yaml.dump(manifest, file)
+            yaml.dump(self.manifest, file)
 
 
     def update_packages_xml(self) -> None:
@@ -445,10 +458,7 @@ class RobotDevDeployHandler(Singleton):
                 self.docker_handlers.append(DockerHandler(
                     component=self.components[-1], robot=self.robot
                 ))
-                if self.components[-1].dockerfile_prod_path is None:
-                    print('⚠️  Not production dockerfile.')
-                else:
-                    print('✅ OK.')
+                print('✅ OK.')
             except RobotDevComponentNotPlatform:
                 print(
                     '❌ Not dockerfile for platform '
@@ -470,10 +480,17 @@ class RobotDevDeployHandler(Singleton):
             print(f'  Development image...')
             print()
             docker_handler.build_image(BuildImageType.DEVEL)
-            if component.dockerfile_prod_path is not None:
-                print()
-                print(f'  Production image...')
-                docker_handler.build_image(BuildImageType.PROD)
+            print(f'  Production image...')
+
+            print(component.component_desc)
+
+            metadata = {
+                'REPO_NAME': self.repo_name,
+                'REPO_METADATA': json.dumps(self.manifest),
+                'COMPONENT_METADATA': json.dumps(component.component_desc),
+            }
+
+            docker_handler.build_image(BuildImageType.PROD, metadata)
         print()
 
 
