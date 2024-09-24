@@ -31,11 +31,11 @@ class RobotDevDockerHandler:
 
         if build_type==BuildImageType.DEVEL:
             docker_build_context_path = self.component.local_path
-            tag = self.component.image_dev_name
+            tag = self.component.image_name_dev
             dockerfile = self.component.dockerfile_path
         elif build_type==BuildImageType.PROD:
             docker_build_context_path = DEV_ENV_PATH / FOLDER_SRC
-            tag = self.component.image_prod_name
+            tag = self.component.image_name_prod
             dockerfile = GENERIC_PROD_DOCKERFILE
 
         docker_build_command = f'cd {DEV_ENV_PATH} && '
@@ -56,7 +56,7 @@ class RobotDevDockerHandler:
             docker_build_command += f'--build-arg {key}=\'{metadata[key]}\' '
 
         if build_type==BuildImageType.PROD:
-            docker_build_command += f'--build-arg FROM={self.component.image_dev_name} '
+            docker_build_command += f'--build-arg FROM={self.component.image_name_dev} '
 
         docker_build_command += f'-f {dockerfile} '
         docker_build_command += f'{docker_build_context_path}'
@@ -74,9 +74,9 @@ class RobotDevDockerHandler:
     def push_image(self, build_type:BuildImageType):
 
         if build_type==BuildImageType.DEVEL:
-            tag = self.component.image_dev_name
+            tag = self.component.image_name_dev
         elif build_type==BuildImageType.PROD:
-            tag = self.component.image_prod_name
+            tag = self.component.image_name_prod
 
         docker_build_command = f'cd {DEV_ENV_PATH} && '
 
@@ -98,6 +98,40 @@ class RobotDevDockerHandler:
         )
         print()
 
+
+    def pull_image(self, image:str):
+        if self.robot.is_local:
+            ssh_prefix = ''
+        else:
+            ssh_prefix = f'DOCKER_HOST=ssh://{self.robot.name}'
+
+        docker_build_command = (
+            f'{ssh_prefix} docker pull {DEPLOY_DOCKER_REPO_ENDPOINT}/{image} && '
+            f'{ssh_prefix} docker tag {DEPLOY_DOCKER_REPO_ENDPOINT}/{image} {image} && '
+            f'{ssh_prefix} docker rmi {DEPLOY_DOCKER_REPO_ENDPOINT}/{image}'
+        )
+
+        subprocess.run(
+            docker_build_command, 
+            shell=True, 
+            check=True,
+        )
+        print()
+
+
+    def pull_images(self, version:str):
+        if version.endswith('.dev'):
+            images_to_pull = [
+                f'{self.component.image_name_base}.{version}',
+            ]
+        else:
+            images_to_pull = [
+                f'{self.component.image_name_base}.{version}',
+                f'{self.component.image_name_base}.{version.replace(".beta","")}.dev',
+            ]
+        
+        for image in images_to_pull:
+            self.pull_image(image)
 
 
     def get_running_container_info(self):
@@ -230,7 +264,7 @@ class RobotDevDockerHandler:
             docker_command += f'  -v={":".join(volume_str)} \\\n'
 
         # Image
-        docker_command += f'  {self.component.image_dev_name} \\\n'
+        docker_command += f'  {self.component.image_name_dev} \\\n'
 
         # Command
         docker_command += f'  \\\n{command}\\\n \\\n'

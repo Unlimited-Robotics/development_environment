@@ -31,6 +31,7 @@ class RobotDevComponent:
                 parser:argparse.ArgumentParser=None,
                 full_name:str=None,
                 robot:Robot=None,
+                checks:bool=True,
             ):
         if parser is not None:
             parser.add_argument('-c', '--component', type=str, required=True)
@@ -52,26 +53,34 @@ class RobotDevComponent:
         repo_path = LOCAL_SRC_PATH / repo_name
         local_path = repo_path / 'components' / name
 
-        component_desc_path = local_path / f'{name}.yaml'
-        try:
-            with open(component_desc_path, 'r') as file:
-                component_desc = yaml.safe_load(file)
-        except FileNotFoundError:
-            raise RobotDevComponentError(
-                f'Profile description file \'{component_desc_path}\' not found.'
-            )
+        if checks:
+            component_desc_path = local_path / f'{name}.yaml'
+            try:
+                with open(component_desc_path, 'r') as file:
+                    component_desc = yaml.safe_load(file)
+            except FileNotFoundError:
+                raise RobotDevComponentError(
+                    f'Profile description file \'{component_desc_path}\' not found.'
+                )
         
-        repo_manifest_path = repo_path / 'manifest.yaml'
-        try:
-            with open(repo_manifest_path, 'r') as file:
-                repo_manifest = yaml.safe_load(file)
-        except FileNotFoundError:
-            raise RobotDevComponentError(
-                f'Profile description file \'{component_desc_path}\' not found.'
-            )
+        if checks:
+            repo_manifest_path = repo_path / 'manifest.yaml'
+            try:
+                with open(repo_manifest_path, 'r') as file:
+                    repo_manifest = yaml.safe_load(file)
+            except FileNotFoundError:
+                raise RobotDevComponentError(
+                    f'Profile description file \'{component_desc_path}\' not found.'
+                )
+        else:
+            component_desc = {}
         
-        version_prod = repo_manifest['version']
-        version_dev = version_prod.replace('.beta','') + '.dev'
+        if checks:
+            version_prod = repo_manifest['version']
+            version_dev = version_prod.replace('.beta','') + '.dev'
+        else:
+            version_prod = None
+            version_dev = None
         
         if 'src' in component_desc:
             src = component_desc['src']
@@ -103,20 +112,31 @@ class RobotDevComponent:
         else:
             system = False
 
-        dockerfile_path = local_path / 'dockerfiles' / \
-            f'{robot.platform}.dockerfile'
-        if not dockerfile_path.is_file():
-            raise RobotDevComponentNotPlatform(
-                f'Dockerfile: \'{dockerfile_path}\' not found.'
-            )
+        if checks:
+            dockerfile_path = local_path / 'dockerfiles' / \
+                f'{robot.platform}.dockerfile'
+            if not dockerfile_path.is_file():
+                raise RobotDevComponentNotPlatform(
+                    f'Dockerfile: \'{dockerfile_path}\' not found.'
+                )
+        else:
+            dockerfile_path = None
         
-        dockerfile_prod_path = local_path / 'dockerfiles' / \
-            f'{robot.platform}.prod.dockerfile'
-        if not dockerfile_prod_path.is_file():
+        if checks:
+            dockerfile_prod_path = local_path / 'dockerfiles' / \
+                f'{robot.platform}.prod.dockerfile'
+            if not dockerfile_prod_path.is_file():
+                dockerfile_prod_path = None
+        else:
             dockerfile_prod_path = None
 
-        image_dev_name = f'{".".join(repo_name.split("_", 2))}.{name}:{robot.platform}.{version_dev}'
-        image_prod_name = f'{".".join(repo_name.split("_", 2))}.{name}:{robot.platform}.{version_prod}'
+        image_name_base = f'{".".join(repo_name.split("_", 2))}.{name}:{robot.platform}'
+        if checks:
+            image_name_dev = f'{image_name_base}.{version_dev}'
+            image_name_prod = f'{image_name_base}.{version_prod}'
+        else:
+            image_name_dev = None
+            image_name_prod = None
 
         repo = RepoHandler(repo_path)
         try:
@@ -124,7 +144,7 @@ class RobotDevComponent:
             repo.assert_no_local_changes()
             repo.assert_pointing_to_tag()
         except RobotDevGitError:
-            image_dev_name += '.changes'
+            image_name_dev += '.changes'
 
         container_name = CONTAINER_NAME_TEMPLATE.format(
             repo=repo_name,
@@ -154,8 +174,9 @@ class RobotDevComponent:
         self.devices = devices
         self.dockerfile_path = dockerfile_path
         self.dockerfile_prod_path = dockerfile_prod_path
-        self.image_dev_name = image_dev_name
-        self.image_prod_name = image_prod_name
+        self.image_name_base = image_name_base
+        self.image_name_dev = image_name_dev
+        self.image_name_prod = image_name_prod
         self.container_name = container_name
 
 

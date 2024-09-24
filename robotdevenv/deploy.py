@@ -481,8 +481,7 @@ class RobotDevDeployHandler(Singleton):
             print()
             docker_handler.build_image(BuildImageType.DEVEL)
             print(f'  Production image...')
-
-            print(component.component_desc)
+            print()
 
             metadata = {
                 'REPO_NAME': self.repo_name,
@@ -506,8 +505,8 @@ class RobotDevDeployHandler(Singleton):
             print(f'  Development image...')
             print()
             docker_handler.push_image(BuildImageType.DEVEL)
-            if component.dockerfile_prod_path is not None:
-                print()
-                print(f'  Production image...')
-                docker_handler.push_image(BuildImageType.PROD)
+            print()
+            print(f'  Production image...')
+            print()
+            docker_handler.push_image(BuildImageType.PROD)
         print()

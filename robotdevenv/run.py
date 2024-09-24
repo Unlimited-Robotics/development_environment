@@ -60,8 +60,8 @@ class RobotDevRunHandler(Singleton):
         # Check if there is a container running the base image (same component)
         containers_info = \
             self.docker_handler.get_running_containers_and_images()
-        base_image_name = self.component.image_dev_name.split(':')[0].strip()
-        base_tag_name = self.component.image_dev_name.split(':')[1].strip()
+        base_image_name = self.component.image_name_dev.split(':')[0].strip()
+        base_tag_name = self.component.image_name_dev.split(':')[1].strip()
 
         for info in containers_info:
             image_name = info[1]
