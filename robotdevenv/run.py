@@ -89,13 +89,15 @@ class RobotDevRunHandler(Singleton):
 
             # Config folder definition
             config_path_global = GLOBAL_CONFIG_PATH
+            config_localpath_devenv = DEV_ENV_PATH / FOLDER_CONFIG
+
             if self.robot.is_local:
-                config_path_devenv = DEV_ENV_PATH / FOLDER_CONFIG
+                config_path_devenv = config_localpath_devenv
             else:
                 config_path_devenv = self.robot.get_host_ws_path() / FOLDER_CONFIG
 
             if config_origin=='devenv':
-                if not config_path_devenv.is_dir():
+                if not config_localpath_devenv.is_dir():
                     raise RobotDevRunError(
                         f'Configuration folder not found in development '
                         'environment root folder'
