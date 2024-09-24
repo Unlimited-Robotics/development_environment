@@ -98,6 +98,11 @@ class RobotDevComponent:
         else:
             devices = False
 
+        if 'system' in component_desc:
+            system = component_desc['system']
+        else:
+            system = False
+
         dockerfile_path = local_path / 'dockerfiles' / \
             f'{robot.platform}.dockerfile'
         if not dockerfile_path.is_file():
@@ -145,6 +150,7 @@ class RobotDevComponent:
         self.ros_pkgs = ros_pkgs
         self.display = display
         self.sound = sound
+        self.system = system
         self.devices = devices
         self.dockerfile_path = dockerfile_path
         self.dockerfile_prod_path = dockerfile_prod_path

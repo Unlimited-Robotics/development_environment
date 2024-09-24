@@ -211,7 +211,11 @@ class RobotDevDockerHandler:
         if self.component.devices:
             docker_command +=  '  -v /dev:/dev \\\n'
             docker_command +=  '  -v /run/udev:/run/udev:ro \\\n'
-        
+
+        # System
+        if self.component.system: 
+            docker_command +=  '  -v /sys/kernel/debug/clk:/clk:ro \\\n'
+            
         # Env Files
         for env_file in env_files:
             docker_command += f'  --env-file={env_file} \\\n'
