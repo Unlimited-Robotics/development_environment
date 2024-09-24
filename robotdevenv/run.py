@@ -27,8 +27,8 @@ class RobotDevRunHandler(Singleton):
                 robot:Robot,
             ):
         self.component = component
-        self.__robot = robot
-        self.docker_handler = DockerHandler(self.component, self.__robot)
+        self.robot = robot
+        self.docker_handler = DockerHandler(self.component, self.robot)
 
 
     def __update_env_from_file(self,
@@ -89,8 +89,10 @@ class RobotDevRunHandler(Singleton):
 
             # Config folder definition
             config_path_global = GLOBAL_CONFIG_PATH
-            config_path_devenv = DEV_ENV_PATH / FOLDER_CONFIG
-            config_path_component = self.component.local_path / FOLDER_CONFIG
+            if self.robot.is_local:
+                config_path_devenv = DEV_ENV_PATH / FOLDER_CONFIG
+            else:
+                config_path_devenv = self.robot.get_host_ws_path() / FOLDER_CONFIG
 
             if config_origin=='devenv':
                 if not config_path_devenv.is_dir():
@@ -134,7 +136,7 @@ class RobotDevRunHandler(Singleton):
             print()
 
             env_vars = {
-                'IDHOST': self.__robot.name,
+                'IDHOST': self.robot.name,
                 'IDCOMPONENT': self.component.name,
                 'ROBOT_NAME': ROBOT_NAME,
             }
