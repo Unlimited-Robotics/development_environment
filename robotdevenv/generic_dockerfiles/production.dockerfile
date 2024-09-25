@@ -29,17 +29,17 @@ FROM ${FROM} AS production
 ARG REPO_METADATA
 ARG COMPONENT_METADATA
 ARG REPO_NAME
+ARG COMPONENT_NAME
 
 # Copy binaries from builder
 COPY --from=builder /robot/build /robot/build
 
 # Copy Commands
-COPY /gary_core_control/components/teleop/commands /robot/commands
-COPY /gary_core_control/components/teleop/component_static_data /robot/component_static_data
-
-RUN touch /jeison
+COPY /${REPO_NAME}/components/${COMPONENT_NAME}/commands /robot/commands
+COPY /${REPO_NAME}/components/${COMPONENT_NAME}/component_static_data /robot/component_static_data
 
 # Labels
+LABEL REPO_NAME=${REPO_NAME}
 LABEL REPO_NAME=${REPO_NAME}
 LABEL REPO_METADATA=${REPO_METADATA}
 LABEL COMPONENT_METADATA=${COMPONENT_METADATA}

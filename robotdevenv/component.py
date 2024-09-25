@@ -138,13 +138,16 @@ class RobotDevComponent:
             image_name_dev = None
             image_name_prod = None
 
-        repo = RepoHandler(repo_path)
-        try:
-            repo.assert_deploy_branch()
-            repo.assert_no_local_changes()
-            repo.assert_pointing_to_tag()
-        except RobotDevGitError:
-            image_name_dev += '.changes'
+        if checks:
+            repo = RepoHandler(repo_path)
+            try:
+                repo.assert_deploy_branch()
+                repo.assert_no_local_changes()
+                repo.assert_pointing_to_tag()
+            except RobotDevGitError:
+                image_name_dev += '.changes'
+        else:
+            repo = None
 
         container_name = CONTAINER_NAME_TEMPLATE.format(
             repo=repo_name,

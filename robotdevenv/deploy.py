@@ -485,6 +485,7 @@ class RobotDevDeployHandler(Singleton):
 
             metadata = {
                 'REPO_NAME': self.repo_name,
+                'COMPONENT_NAME': component.name,
                 'REPO_METADATA': json.dumps(self.manifest),
                 'COMPONENT_METADATA': json.dumps(component.component_desc),
             }
