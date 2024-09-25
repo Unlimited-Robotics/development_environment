@@ -60,7 +60,7 @@ class RobotDevComponent:
                     component_desc = yaml.safe_load(file)
             except FileNotFoundError:
                 raise RobotDevComponentError(
-                    f'Profile description file \'{component_desc_path}\' not found.'
+                    f'Component description file \'{component_desc_path}\' not found.'
                 )
         
         if checks:
@@ -70,7 +70,7 @@ class RobotDevComponent:
                     repo_manifest = yaml.safe_load(file)
             except FileNotFoundError:
                 raise RobotDevComponentError(
-                    f'Profile description file \'{component_desc_path}\' not found.'
+                    f'Repository manifest file \'{repo_manifest_path}\' not found.'
                 )
         else:
             component_desc = {}
@@ -111,6 +111,11 @@ class RobotDevComponent:
             system = component_desc['system']
         else:
             system = False
+
+        if 'docker' in component_desc:
+            docker = component_desc['docker']
+        else:
+            docker = False
 
         if checks:
             dockerfile_path = local_path / 'dockerfiles' / \
@@ -174,6 +179,7 @@ class RobotDevComponent:
         self.display = display
         self.sound = sound
         self.system = system
+        self.docker = docker
         self.devices = devices
         self.dockerfile_path = dockerfile_path
         self.dockerfile_prod_path = dockerfile_prod_path
