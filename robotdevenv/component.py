@@ -112,10 +112,10 @@ class RobotDevComponent:
         else:
             system = False
 
-        if 'docker' in component_desc:
-            docker = component_desc['docker']
+        if 'config' in component_desc:
+            config = component_desc['config']
         else:
-            docker = False
+            config = False
 
         if checks:
             dockerfile_path = local_path / 'dockerfiles' / \
@@ -179,7 +179,7 @@ class RobotDevComponent:
         self.display = display
         self.sound = sound
         self.system = system
-        self.docker = docker
+        self.config = config
         self.devices = devices
         self.dockerfile_path = dockerfile_path
         self.dockerfile_prod_path = dockerfile_prod_path

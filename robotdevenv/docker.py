@@ -267,8 +267,9 @@ class RobotDevDockerHandler:
             docker_command +=  '  -v /sys/kernel/debug/clk:/clk:ro \\\n'
         
         # Docker
-        if self.component.docker: 
+        if self.component.config: 
             docker_command +=  '  -v /var/run/docker.sock:/var/run/docker.sock:ro \\\n'
+            docker_command +=  '  -v /opt/ur:/opt/ur \\\n'
             
         # Env Files
         for env_file in env_files:
