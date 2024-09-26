@@ -140,6 +140,7 @@ class RobotDevRunHandler(Singleton):
             env_vars = {
                 'IDHOST': self.robot.name,
                 'IDCOMPONENT': self.component.name,
+                'PLATFORM': self.robot.platform,
                 'ROBOT_NAME': ROBOT_NAME,
             }
 
