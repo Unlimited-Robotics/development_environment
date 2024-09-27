@@ -116,18 +116,7 @@ class RobotDevRunHandler(Singleton):
             env_vars_from_files = {}
             env_files_paths = []
 
-            local_env_path = self.component.local_path / 'env'
-            if local_env_path.is_file():
-                env_files_paths.append(local_env_path)
-                self.__update_env_from_file(env_vars_from_files, local_env_path)
-
-            local_env_path = DEV_ENV_PATH / FOLDER_CONFIG / 'env' / 'env'
-            if local_env_path.is_file():
-                env_files_paths.append(local_env_path)
-                self.__update_env_from_file(env_vars_from_files, local_env_path)
-            
-            local_env_path = DEV_ENV_PATH / FOLDER_CONFIG / 'env' / \
-                            f'{self.component.container_name}.env'
+            local_env_path = DEV_ENV_PATH / FOLDER_CONFIG / 'env'
             if local_env_path.is_file():
                 env_files_paths.append(local_env_path)
                 self.__update_env_from_file(env_vars_from_files, local_env_path)
