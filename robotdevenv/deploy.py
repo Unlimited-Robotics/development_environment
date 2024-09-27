@@ -22,14 +22,15 @@ from robotdevenv.constants import FILE_ROBOTS_PATH
 from robotdevenv.constants import DEPLOY_DEFAULT_BUILDING_HOST
 
 
-class RobotDevDeployError(Exception): pass
+class RobotDevDeployError(Exception):
+    pass
 
 
 class RobotDevDeployHandler(Singleton):
 
-    def __init__(self, 
-                parser: argparse.ArgumentParser,
-            ):
+    def __init__(self,
+                 parser: argparse.ArgumentParser,
+                 ):
         parser: argparse.ArgumentParser = argparse.ArgumentParser()
         parser.add_argument('--repo', type=str, required=True)
         parser.add_argument('-s', '--skip-repo-steps', action='store_true')
@@ -48,7 +49,7 @@ class RobotDevDeployHandler(Singleton):
         # Public attributes
         self.repo_name = repo_name
         self.skip_repo_steps = args['skip_repo_steps']
-        self.last_version:str = None
+        self.last_version: str = None
         self.new_version: str = None
         self.build_host: str = None
         self.robot = None
@@ -56,16 +57,15 @@ class RobotDevDeployHandler(Singleton):
         self.manifest_path = manifest_path
         self.components_path = components_path
         self.repo = repo
-        self.robot:Robot = None
-        self.components:list[Component] = []
-        self.docker_handlers:list[DockerHandler] = []
-        self.components_paths:list[Path] = []
-
+        self.robot: Robot = None
+        self.components: list[Component] = []
+        self.docker_handlers: list[DockerHandler] = []
+        self.components_paths: list[Path] = []
 
     def deploy(self) -> None:
 
         self.read_manifest()
-        
+
         print(f'🔁  Retrieving \'{self.repo_name}\' repository information...')
         self.repo.fetch()
         # Main repository asserts
@@ -118,7 +118,6 @@ class RobotDevDeployHandler(Singleton):
 
         print('🎉🎉 Deploy Process Completed! 🎉🎉')
 
-
     def last_tag_same_as_manifest(self) -> None:
         manifest: dict = {}
         version_manifest: str = ''
@@ -147,7 +146,6 @@ class RobotDevDeployHandler(Singleton):
                 f'\'{version_manifest}\' in the manisfest.yaml file.'
             )
 
-
     def process_dependencies(self) -> None:
 
         components_paths: list = self.get_components_paths()
@@ -160,18 +158,19 @@ class RobotDevDeployHandler(Singleton):
         print(f'⚙️  Processing dependencies...')
         print()
 
-        deps_repos =self.get_deps_repos(deps)
+        deps_repos = self.get_deps_repos(deps)
         self.__fetch_dependency_repo(deps_repos)
         self.__check_changes_whitout_commit(deps_repos)
         self.__check_pointing_to_tag(deps_repos)
 
         for repo in deps_repos:
-            self.dependencies_versions[repo.repo_name] = str(repo.get_last_tag())
+            self.dependencies_versions[repo.repo_name] = str(
+                repo.get_last_tag())
 
         print()
 
-
     # Browse through the components folder and get all folders
+
     def get_components_paths(self) -> list:
         if not self.components_path.is_dir():
             return []
@@ -180,11 +179,10 @@ class RobotDevDeployHandler(Singleton):
                        if folder.is_dir()]
         return folder_list
 
-
     # Get src dependencies from yaml files. Return a list dependencies without duplicates
-    def get_deps(self, 
-                components_paths: list,
-            ) -> list:
+    def get_deps(self,
+                 components_paths: list,
+                 ) -> list:
 
         src_dependencies_list: set[str] = set()  # A set to avoid duplicates
 
@@ -202,7 +200,6 @@ class RobotDevDeployHandler(Singleton):
 
         return src_dependencies_list
 
-
     def get_deps_repos(self, list_dependencies: set) -> list:
         repo_dependencies_list: list = []
         for dependency in list_dependencies:
@@ -211,14 +208,12 @@ class RobotDevDeployHandler(Singleton):
             repo_dependencies_list.append(repo_dependency)
         return repo_dependencies_list
 
-
     def __fetch_dependency_repo(self, repo_dependencies_list: list[RepositoryHandler]) -> None:
 
         print(f'🔻  Fetching dependency repositories...')
 
         for repo in repo_dependencies_list:
             repo.fetch()
-
 
     def __check_changes_whitout_commit(self, repo_dependencies_list: list[RepositoryHandler]) -> None:
 
@@ -227,7 +222,6 @@ class RobotDevDeployHandler(Singleton):
         for repo in repo_dependencies_list:
             repo.assert_no_local_changes()
 
-
     def __check_pointing_to_tag(self, repo_dependencies_list: list[RepositoryHandler]) -> None:
 
         print(f'🟡  Check dependencies pointing to tag...')
@@ -235,7 +229,6 @@ class RobotDevDeployHandler(Singleton):
         for repo in repo_dependencies_list:
             print(f'    📦 Check if {repo.repo_name} is pointing to a Tag!')
             repo.assert_pointing_to_tag()
-
 
     def ask_new_version(self) -> None:
         new_version: str = input(f'🎹 Please type the new version: ')
@@ -249,7 +242,6 @@ class RobotDevDeployHandler(Singleton):
         else:
             self.new_version = new_version
 
-
     def get_version_tuple(self, version: str) -> tuple[int, int, bool]:
 
         pattern = r'^(\d+)\.(\d+)(\.beta)?$'
@@ -262,11 +254,10 @@ class RobotDevDeployHandler(Singleton):
             )
 
         return (
-            int(coincidence.group(1)),  # major 
-            int(coincidence.group(2)),  # minor 
+            int(coincidence.group(1)),  # major
+            int(coincidence.group(2)),  # minor
             coincidence.group(3),       # tag
         )
-
 
     def assert_version_order(self) -> None:
         last_version_tuple = self.get_version_tuple(self.last_version)
@@ -274,12 +265,12 @@ class RobotDevDeployHandler(Singleton):
         expected_versions = [
             f'{last_version_tuple[0]}.{last_version_tuple[1]+1}',
             f'{last_version_tuple[0]}.{last_version_tuple[1]+1}.beta',
-            f'{last_version_tuple[0]+1}.0.beta', # <- Warning [2]
+            f'{last_version_tuple[0]+1}.0.beta',  # <- Warning [2]
         ]
 
         if self.new_version not in expected_versions:
             raise RobotDevDeployError('New version order is not valid.')
-        
+
         if self.new_version == expected_versions[2]:
             answer: str = input(
                 'Are you sure you want to deploy this mayor version? (y/N): '
@@ -289,7 +280,6 @@ class RobotDevDeployHandler(Singleton):
                 print('😵 Aborted')
                 print()
                 exit()
-
 
     def read_manifest(self) -> None:
         # Get manifest file in the repo folder
@@ -301,7 +291,6 @@ class RobotDevDeployHandler(Singleton):
                 f'File \'{self.manifest_path}\' not found.'
             )
 
-
     def update_manifest(self) -> None:
 
         # Update manifest version
@@ -312,7 +301,6 @@ class RobotDevDeployHandler(Singleton):
         with open(self.manifest_path, 'w') as file:
             yaml.dump(self.manifest, file)
 
-
     def update_packages_xml(self) -> None:
 
         path = Path(self.repo_path)
@@ -321,7 +309,12 @@ class RobotDevDeployHandler(Singleton):
         list_path_packages_xml_files: list = []
         for folder in path.iterdir():
             if folder.is_dir() and not folder.name.endswith('.git') and \
-                    not folder.name.startswith('components'):
+                    not folder.name.startswith('components') and \
+                    not folder.name.startswith('.vscode'):
+                file_path = folder / 'package.xml'
+                if not file_path.exists():
+                    print(f'File \'{file_path}\' not found.')
+                    continue
                 list_path_packages_xml_files.append(folder / 'package.xml')
 
         if len(list_path_packages_xml_files) == 0:
@@ -334,7 +327,7 @@ class RobotDevDeployHandler(Singleton):
 
             version_tag = root.find('version')
             if version_tag is not None:
-                xml_new_version = self.new_version.replace('.beta','')
+                xml_new_version = self.new_version.replace('.beta', '')
                 xml_new_version += '.0'
                 version_tag.text = xml_new_version
                 xml_str = lxml.etree.tostring(tree, pretty_print=True,
@@ -347,17 +340,16 @@ class RobotDevDeployHandler(Singleton):
                 with open(file, 'w') as f:
                     f.write(xml_str)
 
-    
     def ask_building_host(self):
-        
+
         try:
             with open(FILE_ROBOTS_PATH, 'r') as file:
-                robots_host_info:dict = yaml.safe_load(file)
+                robots_host_info: dict = yaml.safe_load(file)
         except FileNotFoundError:
             raise RobotDevDeployError(
                 f'File \'{FILE_ROBOTS_PATH}\' not found.'
             )
-        
+
         available_hosts = list(robots_host_info.keys())
         available_hosts.sort()
         available_hosts.insert(0, 'localhost')
@@ -379,7 +371,7 @@ class RobotDevDeployHandler(Singleton):
 
         if (build_host != 'localhost') and (build_host not in available_hosts):
             raise RobotDevDeployError(f'Host {build_host} not found.')
-        
+
         self.build_host = build_host
 
         # ssh = paramiko.SSHClient()
@@ -415,7 +407,6 @@ class RobotDevDeployHandler(Singleton):
         #     finally:
         #         ssh.close()
 
-
     def __get_ssh_hosts(self) -> list[str]:
         # print(f'🔑  Get ssh hosts...')
 
@@ -437,7 +428,6 @@ class RobotDevDeployHandler(Singleton):
         hosts = [host for host in hosts if '*' not in host]
 
         return hosts
-    
 
     def create_build_artifacts(self):
         self.robot = Robot(name=self.build_host)
@@ -467,11 +457,10 @@ class RobotDevDeployHandler(Singleton):
                 continue
         print()
 
-
     def build_components(self):
         print(f'🛠️ Building components...')
         print()
-        
+
         for docker_handler in self.docker_handlers:
             component = docker_handler.component
             print()
@@ -493,11 +482,10 @@ class RobotDevDeployHandler(Singleton):
             docker_handler.build_image(BuildImageType.PROD, metadata)
         print()
 
-
     def push_components(self):
         print(f'⬆️  Pushing components...')
         print()
-        
+
         for docker_handler in self.docker_handlers:
             component = docker_handler.component
             print()
