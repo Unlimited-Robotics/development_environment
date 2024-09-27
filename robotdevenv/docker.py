@@ -36,7 +36,10 @@ class RobotDevDockerHandler:
         elif build_type==BuildImageType.PROD:
             docker_build_context_path = DEV_ENV_PATH / FOLDER_SRC
             tag = self.component.image_name_prod
-            dockerfile = GENERIC_PROD_DOCKERFILE
+            if self.component.dockerfile_prod_path is None:
+                dockerfile = GENERIC_PROD_DOCKERFILE
+            else:
+                dockerfile = self.component.dockerfile_prod_path
 
         docker_build_command = f'cd {DEV_ENV_PATH} && '
 
