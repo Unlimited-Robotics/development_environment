@@ -88,25 +88,10 @@ class RobotDevDockerHandler:
         else:
             ssh_prefix = f'DOCKER_HOST=ssh://{self.robot.name}'
 
-        # print('HOLA')
-        # print(tag)
-        # print(self.component.version_dev)
-        # print(self.component.version_prod)
-        version = tag.split(f':{self.robot.platform}.')[-1]
-        if version.endswith('.dev'):
-            tag_latest = tag.replace(version, 'latest-dev')
-        elif version.endswith('.beta'):
-            tag_latest = tag.replace(version, 'latest-beta')
-        else:
-            tag_latest = tag.replace(version, 'latest')
-
         docker_build_command += (
             f'{ssh_prefix} docker tag {tag} {DEPLOY_DOCKER_REPO_ENDPOINT}/{tag} && '
-            f'{ssh_prefix} docker tag {tag} {DEPLOY_DOCKER_REPO_ENDPOINT}/{tag_latest} && '
             f'{ssh_prefix} docker push {DEPLOY_DOCKER_REPO_ENDPOINT}/{tag} && '
-            f'{ssh_prefix} docker push {DEPLOY_DOCKER_REPO_ENDPOINT}/{tag_latest} && '
-            f'{ssh_prefix} docker rmi {DEPLOY_DOCKER_REPO_ENDPOINT}/{tag} && '
-            f'{ssh_prefix} docker rmi {DEPLOY_DOCKER_REPO_ENDPOINT}/{tag_latest}'
+            f'{ssh_prefix} docker rmi {DEPLOY_DOCKER_REPO_ENDPOINT}/{tag}'
         )
 
         subprocess.run(
