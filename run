@@ -31,7 +31,6 @@ def run_command():
     parser.add_argument('-s', '--sync', action='store_true')
     parser.add_argument('--config', type=str)
     args = dict(parser.parse_known_args()[0]._get_kwargs())
-    arg_detach = args['detach']
 
     command_args = parser.parse_known_args()[1]
     if command_args:

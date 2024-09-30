@@ -7,7 +7,6 @@ from robotdevenv.singleton import Singleton
 from robotdevenv.constants import DEV_ENV_PATH
 from robotdevenv.constants import FOLDER_SRC
 from robotdevenv.constants import FOLDER_CONFIG
-from robotdevenv.constants import FOLDER_GENERIC_STATIC_DATA
 from robotdevenv.constants import LOCAL_SRC_PATH
 
 
@@ -57,13 +56,6 @@ class RobotDevSyncHandler(Singleton):
         print(f'  ➡️  Synchronizing {FOLDER_CONFIG} ... ', end='')
         self.__robot.ssh_handler.sync_to_remote(
                 origin_path=DEV_ENV_PATH/FOLDER_CONFIG, 
-                destination_path=remote_ws_path,
-            )
-        print('✅')
-
-        print(f'  ➡️  Synchronizing {FOLDER_GENERIC_STATIC_DATA} ... ', end='')
-        self.__robot.ssh_handler.sync_to_remote(
-                origin_path=DEV_ENV_PATH/FOLDER_GENERIC_STATIC_DATA, 
                 destination_path=remote_ws_path,
             )
         print('✅')
