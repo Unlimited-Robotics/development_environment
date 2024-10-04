@@ -68,6 +68,7 @@ class RobotDevDeployHandler(Singleton):
 
         print(f'🔁  Retrieving \'{self.repo_name}\' repository information...')
         self.repo.fetch()
+
         # Main repository asserts
         print(f'🤨  Checking \'{self.repo_name}\' repository status...')
         self.repo.assert_deploy_branch()
@@ -83,38 +84,38 @@ class RobotDevDeployHandler(Singleton):
 
             self.process_dependencies()
 
-            print(
-                f'🏅 Last version \'{self.repo.repo_name}\': '
-                f'{self.repo.get_last_tag()}'
-            )
-            print()
+            # print(
+            #     f'🏅 Last version \'{self.repo.repo_name}\': '
+            #     f'{self.repo.get_last_tag()}'
+            # )
+            # print()
 
-            self.ask_new_version()
-            self.assert_version_order()
+            # self.ask_new_version()
+            # self.assert_version_order()
 
-            print(f'🔼 Update versions in repository files...')
-            print()
+            # print(f'🔼 Update versions in repository files...')
+            # print()
 
-            self.update_manifest()
-            self.update_packages_xml()
+            # self.update_manifest()
+            # self.update_packages_xml()
 
-            print(f'🔼 Update repo...')
-            print()
+            # print(f'🔼 Update repo...')
+            # print()
 
-            self.repo.create_commit(self.new_version)
-            self.repo.create_tag(self.new_version)
-            self.repo.push_repository()
+            # self.repo.create_commit(self.new_version)
+            # self.repo.create_tag(self.new_version)
+            # self.repo.push_repository()
 
             print()
 
         print(f'🛢️ Building docker images...')
 
-        self.components_paths = self.get_components_paths()
-        if self.components_paths:
-            self.ask_building_host()
-            self.create_build_artifacts()
-            self.build_components()
-            self.push_components()
+        # self.components_paths = self.get_components_paths()
+        # if self.components_paths:
+        #     self.ask_building_host()
+        #     self.create_build_artifacts()
+        #     self.build_components()
+        #     self.push_components()
 
         print('🎉🎉 Deploy Process Completed! 🎉🎉')
 
@@ -160,6 +161,7 @@ class RobotDevDeployHandler(Singleton):
 
         deps_repos = self.get_deps_repos(deps)
         self.__fetch_dependency_repo(deps_repos)
+        self.__check_in_main_branch(deps_repos)
         self.__check_changes_whitout_commit(deps_repos)
         self.__check_pointing_to_tag(deps_repos)
 
@@ -214,6 +216,14 @@ class RobotDevDeployHandler(Singleton):
 
         for repo in repo_dependencies_list:
             repo.fetch()
+
+    def __check_in_main_branch(self, repo_dependencies_list: list[RepositoryHandler]) -> None:
+
+        print(f'🔵  Check dependencies in main branch...')
+
+        for repo in repo_dependencies_list:
+            print(f'    📦 Check if {repo.repo_name} is in main branch!')
+            repo.assert_deploy_branch()
 
     def __check_changes_whitout_commit(self, repo_dependencies_list: list[RepositoryHandler]) -> None:
 

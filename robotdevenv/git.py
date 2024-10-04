@@ -5,7 +5,8 @@ import subprocess
 from robotdevenv.constants import DEPLOY_BRANCH
 
 
-class RobotDevGitError(Exception): pass
+class RobotDevGitError(Exception):
+    pass
 
 
 class RobotDevGitHandler:
@@ -24,46 +25,48 @@ class RobotDevGitHandler:
 
 class RobotDevRepositoryHandler:
 
-    def __init__(self, 
-                repo_path: pathlib.Path,
-            ):
+    def __init__(self,
+                 repo_path: pathlib.Path,
+                 ):
         repo_name = repo_path.name
 
         try:
             # Create object if the path is correct
             repo = git.Repo(repo_path)
             # Getting the repo url
-            repo_url:git.Remote = repo.remotes.origin.url
+            repo_url: git.Remote = repo.remotes.origin.url
         except git.exc.NoSuchPathError as e:
             raise RobotDevGitError(
                 f'Repository \'{repo_name}\' not found. Check if it exists in '
                 'src folder.'
             )
-        
+
         # Public attributes
         self.repo_name = repo_name
         self.repo = repo
         self.repo_url = repo_url
 
-
     def fetch(self):
         self.repo.remotes.origin.fetch()
 
-
     def assert_deploy_branch(self, branch_name: str = DEPLOY_BRANCH):
+
+        head = self.repo.head
+        if head.is_detached:
+            raise RobotDevGitError(
+                f"Repository '{self.repo_name}' is on commit, not a branch.")
+
         if self.repo.active_branch.name != branch_name:
             raise RobotDevGitError(
                 f'Repository \'{self.repo_name}\' not in branch '
                 f'\'{DEPLOY_BRANCH}\'.'
             )
 
-
     def assert_no_local_changes(self):
         if self.repo.is_dirty():
             raise RobotDevGitError(
                 f'Repository \'{self.repo_name}\' has uncommited changes.'
             )
-
 
     def assert_branch_updated(self, branch_name: str = DEPLOY_BRANCH):
         local_commit = self.repo.heads[branch_name].commit.hexsha
@@ -74,7 +77,6 @@ class RobotDevRepositoryHandler:
                 f'Branch \'{DEPLOY_BRANCH}\' of repo \'{self.repo_name}\' not '
                 'updated with the remote.'
             )
-        
 
     def get_tags(self):
         if not self.repo.tags:
@@ -83,16 +85,13 @@ class RobotDevRepositoryHandler:
             )
         return self.repo.tags
 
-
     def get_last_tag(self):
         return self.get_tags()[-1]
-
 
     def is_pointing_to_tag(self, branch_name: str = DEPLOY_BRANCH):
         last_local_commit = self.repo.heads[branch_name].commit
         last_tag: git.Tag = self.get_last_tag()
         return last_tag.commit == last_local_commit
-
 
     def assert_no_pointing_to_tag(self, branch_name: str = DEPLOY_BRANCH):
         if self.is_pointing_to_tag():
@@ -100,25 +99,20 @@ class RobotDevRepositoryHandler:
                 f'Repository \'{self.repo_name}\' pointing to a tag.'
             )
 
-
     def assert_pointing_to_tag(self):
         if not self.is_pointing_to_tag():
             raise RobotDevGitError(
                 f'Repository \'{self.repo_name}\' not pointing to a tag.'
             )
-        
-
 
     def create_commit(self, message: str):
         print(f'    📩 Creating commit with message: {message}')
         self.repo.git.add(all=True)
         self.repo.index.commit(message)
 
-
     def create_tag(self, tag_name: str):
         print(f'    🏷  Creating tag: {tag_name}')
         self.repo.create_tag(tag_name)
-
 
     def push_repository(self):
         print('    🚀 Pushing repository...')
