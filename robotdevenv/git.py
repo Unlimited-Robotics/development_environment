@@ -54,7 +54,7 @@ class RobotDevRepositoryHandler:
         head = self.repo.head
         if head.is_detached:
             raise RobotDevGitError(
-                f"Repository '{self.repo_name}' is on commit, not a branch.")
+                f"Repository '{self.repo_name}' is detached.")
 
         if self.repo.active_branch.name != branch_name:
             raise RobotDevGitError(
