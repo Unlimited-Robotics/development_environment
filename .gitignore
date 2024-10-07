@@ -5,6 +5,8 @@ __pycache__/
 robots.yaml
 /borrar
 
+.vscode
+
 /build/**
 !/build/.gitkeep
 
