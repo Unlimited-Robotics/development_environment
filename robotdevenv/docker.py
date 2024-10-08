@@ -1,5 +1,7 @@
 import subprocess
 import json
+import boto3
+import base64
 from typing import List, Dict
 from enum import Enum
 
@@ -25,9 +27,41 @@ class RobotDevDockerHandler:
             ):
         self.component:Component = component
         self.robot:Robot = robot
+        self.aws_logged_in = False
+
+
+    def login_aws(self):
+
+        if not self.aws_logged_in:
+            print('Logging to AWS...')
+            erc_client = boto3.client(service_name='ecr')
+            response = erc_client.get_authorization_token()
+            username, password = base64.b64decode(
+                response['authorizationData'][0]['authorizationToken'])\
+                .decode('utf-8').split(':')
+            command = (
+                f'docker login --username {username} --password {password} '
+                f'{DEPLOY_DOCKER_REPO_ENDPOINT}'
+            )
+            try:
+                subprocess.run(
+                    command, 
+                    shell=True, 
+                    check=True, 
+                    stdout=subprocess.PIPE, 
+                    stderr=subprocess.PIPE
+                )
+            except subprocess.CalledProcessError as e:
+                print(e.stdout.decode())
+                print(e.stderr.decode())
+                raise e
+            self.aws_logged_in = True
+            print('Success\n')
         
     
     def build_image(self, build_type:BuildImageType, metadata={}):
+
+        self.login_aws()
 
         if build_type==BuildImageType.DEVEL:
             docker_build_context_path = self.component.local_path
@@ -76,6 +110,8 @@ class RobotDevDockerHandler:
     
     def push_image(self, build_type:BuildImageType):
 
+        self.login_aws()
+
         if build_type==BuildImageType.DEVEL:
             tag = self.component.image_name_dev
         elif build_type==BuildImageType.PROD:
@@ -104,6 +140,9 @@ class RobotDevDockerHandler:
 
 
     def pull_image(self, image:str):
+
+        self.login_aws()
+
         if self.robot.is_local:
             ssh_prefix = ''
         else:
