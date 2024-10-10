@@ -270,19 +270,16 @@ class RobotDevDockerHandler:
 
         # Display
         if self.component.display:
-            docker_command +=  '  -e XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \\\n'
             docker_command += f'  -e=DISPLAY=:0 \\\n'
-            docker_command +=  '  -v=${XDG_RUNTIME_DIR}/gdm/Xauthority:/root/.Xauthority \\\n'
+            docker_command +=  '  -v=/run/user/1000/gdm/Xauthority:/root/.Xauthority:ro \\\n'
             docker_command += f'  -v=/tmp/.X11-unix:/tmp/.X11-unix:rw  \\\n'
 
         # Sound
         if self.component.sound:
-            docker_command +=  '  -v /etc/alsa:/etc/alsa \\\n'
-            docker_command +=  '  -v /usr/share/alsa:/usr/share/alsa \\\n'
-            docker_command +=  '  -e PULSE_SERVER=unix:${XDG_RUNTIME_DIR}/pulse/native \\\n'
+            docker_command +=  '  -e PULSE_SERVER=unix:/root/.pulse/native \\\n'
+            docker_command +=  '  -v /run/user/1000/pulse/native:/root/.pulse/native:ro \\\n'
+            docker_command +=  '  -v /home/gary/.config/pulse/cookie:/root/.config/pulse/cookie:ro \\\n'
             docker_command +=  '  -e PULSE_COOKIE=/root/.config/pulse/cookie \\\n'
-            docker_command +=  '  -v ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native \\\n'
-            docker_command +=  f'  -v {self.robot.get_remote_home()}/.config/pulse/cookie:/root/.config/pulse/cookie \\\n'
 
         # Devices
         if self.component.devices:
