@@ -59,7 +59,10 @@ class RobotDevDockerHandler:
             print('Success\n')
         
     
-    def build_image(self, build_type:BuildImageType, metadata={}):
+    def build_image(self, 
+                build_type:BuildImageType, 
+                metadata={}
+            ):
 
         self.login_aws()
 
@@ -74,6 +77,10 @@ class RobotDevDockerHandler:
                 dockerfile = GENERIC_PROD_DOCKERFILE
             else:
                 dockerfile = self.component.dockerfile_prod_path
+
+        print(f'🛠️  Building component image: \'{tag}\'')
+        print(f'            from dockerfile: \'{dockerfile}\'')
+        print()
 
         docker_build_command = f'cd {DEV_ENV_PATH} && '
 
@@ -233,6 +240,7 @@ class RobotDevDockerHandler:
                 env_vars: Dict[str, str]=[],
                 interactive=False,
                 detached_mode=False,
+                build_type=BuildImageType.DEVEL,
             ):
 
         docker_command = ''
@@ -309,7 +317,10 @@ class RobotDevDockerHandler:
             docker_command += f'  -v={":".join(volume_str)} \\\n'
 
         # Image
-        docker_command += f'  {self.component.image_name_dev} \\\n'
+        if build_type==BuildImageType.DEVEL:
+            docker_command += f'  {self.component.image_name_dev} \\\n'
+        else:
+            docker_command += f'  {self.component.image_name_prod} \\\n'
 
         # Command
         docker_command += f'  \\\n{command}\\\n \\\n'
@@ -328,6 +339,7 @@ class RobotDevDockerHandler:
     def exec_command(self,
                 command: str,
                 interactive=False,
+                build_type=BuildImageType.DEVEL,
             ):
 
         docker_command = ''

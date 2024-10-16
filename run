@@ -5,6 +5,7 @@ from robotdevenv.component import RobotDevComponent as Component
 from robotdevenv.robot import RobotDevRobot as Robot
 from robotdevenv.sync import RobotDevSyncHandler as SyncHandler
 from robotdevenv.run import RobotDevRunHandler as RunHandler
+from robotdevenv.docker import BuildImageType
 from robotdevenv.managed_main_execution import managed_main_execution
 
 
@@ -29,6 +30,7 @@ def run_command():
 
     parser.add_argument('-d', '--detach', action='store_true')
     parser.add_argument('-s', '--sync', action='store_true')
+    parser.add_argument('-p', '--prod', action='store_true')
     parser.add_argument('--config', type=str)
     args = dict(parser.parse_known_args()[0]._get_kwargs())
 
@@ -45,10 +47,13 @@ def run_command():
     if args['sync'] and not robot.is_local:
         sync_handler.sync_to_robot()
 
+    build_type = BuildImageType.PROD if args['prod'] else BuildImageType.DEVEL
+
     run_handler.run_command(
         command=command, 
         interactive=True,
         config_origin=args['config'],
+        build_type=build_type,
     )
 
 

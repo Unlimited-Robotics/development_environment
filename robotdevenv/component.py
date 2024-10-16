@@ -1,5 +1,6 @@
 import yaml
 import argparse
+from enum import Enum
 
 from robotdevenv.robot import RobotDevRobot as Robot
 from robotdevenv.git import RobotDevRepositoryHandler as RepoHandler
@@ -22,6 +23,11 @@ from robotdevenv.constants import GLOBAL_BASE_PATH
 
 class RobotDevComponentError(Exception): pass
 class RobotDevComponentNotPlatform(RobotDevComponentError): pass
+
+
+class BuildImageType(Enum):
+    DEVEL = 0
+    PROD = 1
 
 
 class RobotDevComponent:
@@ -188,7 +194,9 @@ class RobotDevComponent:
         self.container_name = container_name
 
 
-    def get_volumes(self):
+    def get_volumes(self,
+                build_type=BuildImageType.DEVEL,
+            ):
 
         host_ws_path = self.robot.get_host_ws_path()
 
@@ -201,14 +209,19 @@ class RobotDevComponent:
         ## Component persistent data folder
         dir_host_component_persistent_data = GLOBAL_BASE_PATH / FOLDER_COMPONENT_PERSISTENT_DATA / self.name
 
-        volumes = [
-                (dir_host_build_base, ROBOT_BUILD_PATH),
-                (dir_host_generic_persistent_data, ROBOT_GENERIC_PERSISTENT_DATA_PATH),
-                (dir_host_component_static_data, ROBOT_COMPONENT_STATIC_DATA_PATH, 'ro'),
-                (dir_host_component_persistent_data, ROBOT_COMPONENT_PERSISTENT_DATA_PATH),
-            ]
+        volumes = []
+
+        if(build_type==BuildImageType.DEVEL):
+            volumes.append((dir_host_build_base, ROBOT_BUILD_PATH))
+
+        volumes.append((dir_host_generic_persistent_data, ROBOT_GENERIC_PERSISTENT_DATA_PATH))
+
+        if(build_type==BuildImageType.DEVEL):
+            volumes.append((dir_host_component_static_data, ROBOT_COMPONENT_STATIC_DATA_PATH, 'ro'))
+
+        volumes.append((dir_host_component_persistent_data, ROBOT_COMPONENT_PERSISTENT_DATA_PATH))
             
-        if self.src:
+        if self.src and build_type==BuildImageType.DEVEL:
             for src_component in self.src:
                 dir_host_src_component = host_ws_path / 'src' / src_component
                 volumes.append(

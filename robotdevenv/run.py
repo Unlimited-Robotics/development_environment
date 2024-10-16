@@ -1,11 +1,13 @@
 import yaml
 import pathlib
+from enum import Enum
 
 from robotdevenv.component import RobotDevComponent as Component
 from robotdevenv.robot import RobotDevRobot as Robot
 from robotdevenv.docker import RobotDevDockerHandler as DockerHandler
 from robotdevenv.singleton import Singleton
 from robotdevenv.git import RobotDevGitHandler
+from robotdevenv.docker import BuildImageType
 
 from robotdevenv.constants import FILE_ROS_DOMAINS_PATH
 from robotdevenv.constants import DEV_ENV_PATH
@@ -49,6 +51,7 @@ class RobotDevRunHandler(Singleton):
                 interactive=False,
                 detached_mode=False,
                 config_origin=None,
+                build_type=BuildImageType.DEVEL, 
             ):
         
         if config_origin is not None and \
@@ -60,8 +63,12 @@ class RobotDevRunHandler(Singleton):
         # Check if there is a container running the base image (same component)
         containers_info = \
             self.docker_handler.get_running_containers_and_images()
-        base_image_name = self.component.image_name_dev.split(':')[0].strip()
-        base_tag_name = self.component.image_name_dev.split(':')[1].strip()
+        if build_type == BuildImageType.DEVEL:
+            base_name = self.component.image_name_dev
+        else:
+            base_name = self.component.image_name_prod
+        base_image_name = base_name.split(':')[0].strip()
+        base_tag_name = base_name.split(':')[1].strip()
 
         for info in containers_info:
             image_name = info[1]
@@ -141,7 +148,9 @@ class RobotDevRunHandler(Singleton):
                 env_vars['ROS_DOMAIN_ID'] = ros_domain_id
 
             # Volumes
-            volumes = self.component.get_volumes()
+            volumes = self.component.get_volumes(
+                build_type=build_type,
+            )
             volumes.append(
                 (config_path, ROBOT_CONFIG_PATH, 'ro')
             )
@@ -158,6 +167,7 @@ class RobotDevRunHandler(Singleton):
                 volumes=volumes,
                 interactive=interactive,
                 detached_mode=detached_mode,
+                build_type=build_type,
             )
 
         else:
@@ -170,7 +180,8 @@ class RobotDevRunHandler(Singleton):
             )
             self.docker_handler.exec_command(
                 command=command, 
-                interactive=interactive
+                interactive=interactive,
+                build_type=build_type,
             )
 
 
