@@ -1,6 +1,6 @@
 import yaml
 import argparse
-from enum import Enum
+from enum import IntEnum
 
 from robotdevenv.robot import RobotDevRobot as Robot
 from robotdevenv.git import RobotDevRepositoryHandler as RepoHandler
@@ -25,7 +25,7 @@ class RobotDevComponentError(Exception): pass
 class RobotDevComponentNotPlatform(RobotDevComponentError): pass
 
 
-class BuildImageType(Enum):
+class BuildImageType(IntEnum):
     DEVEL = 0
     PROD = 1
 
@@ -220,7 +220,7 @@ class RobotDevComponent:
             volumes.append((dir_host_component_static_data, ROBOT_COMPONENT_STATIC_DATA_PATH, 'ro'))
 
         volumes.append((dir_host_component_persistent_data, ROBOT_COMPONENT_PERSISTENT_DATA_PATH))
-            
+
         if self.src and build_type==BuildImageType.DEVEL:
             for src_component in self.src:
                 dir_host_src_component = host_ws_path / 'src' / src_component

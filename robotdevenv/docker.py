@@ -3,7 +3,7 @@ import json
 import boto3
 import base64
 from typing import List, Dict
-from enum import Enum
+from enum import IntEnum
 
 from robotdevenv.component import RobotDevComponent as Component
 from robotdevenv.robot import RobotDevRobot as Robot
@@ -14,7 +14,7 @@ from robotdevenv.constants import DEPLOY_DOCKER_REPO_ENDPOINT
 from robotdevenv.constants import GENERIC_PROD_DOCKERFILE
 
 
-class BuildImageType(Enum):
+class BuildImageType(IntEnum):
     DEVEL = 0
     PROD = 1
 
