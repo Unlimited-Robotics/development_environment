@@ -105,7 +105,9 @@ class RobotDevDockerHandler:
         docker_build_command += f'-f {dockerfile} '
         docker_build_command += f'{docker_build_context_path}'
 
+        print('Build command:')
         print(docker_build_command)
+        print()
 
         subprocess.run(
             docker_build_command, 
