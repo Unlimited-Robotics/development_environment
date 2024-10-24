@@ -78,12 +78,18 @@ class RobotDevRepositoryHandler:
                 'updated with the remote.'
             )
 
-    def get_tags(self):
+    def get_tags(self, branch_name: str = DEPLOY_BRANCH):
         if not self.repo.tags:
             raise RobotDevGitError(
                 f'Repository \'{self.repo_name}\' does not have tags.'
             )
-        return self.repo.tags
+        branch = self.repo.branches[branch_name]
+        branch_commits = set(self.repo.iter_commits(branch))
+        branch_tags = [
+            tag for tag in self.repo.tags if tag.commit in branch_commits]
+        branch_tags.sort(key=lambda x: x.commit.committed_date)
+
+        return branch_tags
 
     def get_last_tag(self):
         return self.get_tags()[-1]

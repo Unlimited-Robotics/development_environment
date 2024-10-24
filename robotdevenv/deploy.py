@@ -320,7 +320,8 @@ class RobotDevDeployHandler(Singleton):
         for folder in path.iterdir():
             if folder.is_dir() and not folder.name.endswith('.git') and \
                     not folder.name.startswith('components') and \
-                    not folder.name.startswith('.vscode'):
+                    not folder.name.startswith('.vscode') and \
+                    not folder.name.startswith('.github'):
                 file_path = folder / 'package.xml'
                 if not file_path.exists():
                     print(f'File \'{file_path}\' not found.')
