@@ -22,13 +22,12 @@ class BuildImageType(IntEnum):
 class RobotDevDockerHandler:
 
     def __init__(self,
-                component:Component,
-                robot:Robot,
-            ):
-        self.component:Component = component
-        self.robot:Robot = robot
+                 component: Component,
+                 robot: Robot,
+                 ):
+        self.component: Component = component
+        self.robot: Robot = robot
         self.aws_logged_in = False
-
 
     def login_aws(self):
 
@@ -36,19 +35,25 @@ class RobotDevDockerHandler:
             print('Logging to AWS...')
             erc_client = boto3.client(service_name='ecr')
             response = erc_client.get_authorization_token()
-            username, password = base64.b64decode(
-                response['authorizationData'][0]['authorizationToken'])\
+
+            authorization_data = response['authorizationData'][0]
+            token = authorization_data['authorizationToken']
+            registry_url = authorization_data['proxyEndpoint']
+
+            username, password = base64.b64decode(token)\
                 .decode('utf-8').split(':')
+
             command = (
                 f'docker login --username {username} --password {password} '
-                f'{DEPLOY_DOCKER_REPO_ENDPOINT}'
+                f'{registry_url}'
             )
+
             try:
                 subprocess.run(
-                    command, 
-                    shell=True, 
-                    check=True, 
-                    stdout=subprocess.PIPE, 
+                    command,
+                    shell=True,
+                    check=True,
+                    stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE
                 )
             except subprocess.CalledProcessError as e:
@@ -57,20 +62,19 @@ class RobotDevDockerHandler:
                 raise e
             self.aws_logged_in = True
             print('Success\n')
-        
-    
-    def build_image(self, 
-                build_type:BuildImageType, 
-                metadata={}
-            ):
+
+    def build_image(self,
+                    build_type: BuildImageType,
+                    metadata={}
+                    ):
 
         self.login_aws()
 
-        if build_type==BuildImageType.DEVEL:
+        if build_type == BuildImageType.DEVEL:
             docker_build_context_path = self.component.local_path
             tag = self.component.image_name_dev
             dockerfile = self.component.dockerfile_path
-        elif build_type==BuildImageType.PROD:
+        elif build_type == BuildImageType.PROD:
             docker_build_context_path = DEV_ENV_PATH / FOLDER_SRC
             tag = self.component.image_name_prod
             if self.component.dockerfile_prod_path is None:
@@ -99,7 +103,7 @@ class RobotDevDockerHandler:
         for key in metadata:
             docker_build_command += f'--build-arg {key}=\'{metadata[key]}\' '
 
-        if build_type==BuildImageType.PROD:
+        if build_type == BuildImageType.PROD:
             docker_build_command += f'--build-arg FROM={self.component.image_name_dev} '
 
         docker_build_command += f'-f {dockerfile} '
@@ -110,20 +114,19 @@ class RobotDevDockerHandler:
         print()
 
         subprocess.run(
-            docker_build_command, 
-            shell=True, 
+            docker_build_command,
+            shell=True,
             check=True,
         )
         print()
 
-    
-    def push_image(self, build_type:BuildImageType):
+    def push_image(self, build_type: BuildImageType):
 
         self.login_aws()
 
-        if build_type==BuildImageType.DEVEL:
+        if build_type == BuildImageType.DEVEL:
             tag = self.component.image_name_dev
-        elif build_type==BuildImageType.PROD:
+        elif build_type == BuildImageType.PROD:
             tag = self.component.image_name_prod
 
         docker_build_command = f'cd {DEV_ENV_PATH} && '
@@ -140,15 +143,14 @@ class RobotDevDockerHandler:
         )
 
         subprocess.run(
-            docker_build_command, 
-            shell=True, 
+            docker_build_command,
+            shell=True,
             check=True,
         )
 
         print()
 
-
-    def pull_image(self, image:str):
+    def pull_image(self, image: str):
 
         self.login_aws()
 
@@ -164,14 +166,13 @@ class RobotDevDockerHandler:
         )
 
         subprocess.run(
-            docker_build_command, 
-            shell=True, 
+            docker_build_command,
+            shell=True,
             check=True,
         )
         print()
 
-
-    def pull_images(self, version:str):
+    def pull_images(self, version: str):
         if version.endswith('.dev'):
             images_to_pull = [
                 f'{self.component.image_name_base}.{version}',
@@ -181,22 +182,21 @@ class RobotDevDockerHandler:
                 f'{self.component.image_name_base}.{version}',
                 f'{self.component.image_name_base}.{version.replace(".beta","")}.dev',
             ]
-        
+
         for image in images_to_pull:
             self.pull_image(image)
-
 
     def get_running_container_info(self):
         docker_command = ''
         if not self.robot.is_local:
             docker_command += f'DOCKER_HOST=ssh://{self.robot.name} \\\n'
-        docker_command += "docker inspect " 
+        docker_command += "docker inspect "
         docker_command += self.component.container_name
 
         try:
             process = subprocess.run(
                 docker_command,
-                shell=True, 
+                shell=True,
                 check=True,
                 capture_output=True,
                 text=True,
@@ -204,7 +204,6 @@ class RobotDevDockerHandler:
             return json.loads(process.stdout)[0]
         except subprocess.CalledProcessError:
             return None
-        
 
     def get_running_containers_and_images(self):
         docker_command = ''
@@ -214,7 +213,7 @@ class RobotDevDockerHandler:
         try:
             process = subprocess.run(
                 docker_command,
-                shell=True, 
+                shell=True,
                 check=True,
                 capture_output=True,
                 text=True,
@@ -223,7 +222,7 @@ class RobotDevDockerHandler:
             for line in process.stdout.split('\n'):
                 if line.strip():
                     line_split = line.split(':')
-                    if len(line_split)==3:
+                    if len(line_split) == 3:
                         containers_list.append((
                             line_split[0].strip(),
                             line_split[1].strip(),
@@ -234,16 +233,15 @@ class RobotDevDockerHandler:
         except subprocess.CalledProcessError:
             return []
 
-
     def run_command(self,
-                command: str,
-                volumes: List[tuple]=[],
-                env_files: List[str]=[],
-                env_vars: Dict[str, str]=[],
-                interactive=False,
-                detached_mode=False,
-                build_type=BuildImageType.DEVEL,
-            ):
+                    command: str,
+                    volumes: List[tuple] = [],
+                    env_files: List[str] = [],
+                    env_vars: Dict[str, str] = [],
+                    interactive=False,
+                    detached_mode=False,
+                    build_type=BuildImageType.DEVEL,
+                    ):
 
         docker_command = ''
 
@@ -254,12 +252,12 @@ class RobotDevDockerHandler:
             docker_command += f'DOCKER_HOST=ssh://{self.robot.name} \\\n'
 
         docker_command += (
-                'docker run \\\n'
-                '  --tty \\\n'
-                '  --privileged \\\n'
-                '  --network=host \\\n'
-                '  --pid=host \\\n'
-            )
+            'docker run \\\n'
+            '  --tty \\\n'
+            '  --privileged \\\n'
+            '  --network=host \\\n'
+            '  --pid=host \\\n'
+        )
 
         if self.robot.platform == 'jetsonorinagx':
             docker_command += '  --runtime nvidia \\\n'
@@ -272,7 +270,7 @@ class RobotDevDockerHandler:
             docker_command += '  --rm \\\n'
         # Detached mode
         elif detached_mode:
-            docker_command +=  '  -d \\\n'
+            docker_command += '  -d \\\n'
             docker_command += f'  -e=DETACHED_MODE=true \\\n'
         # Not interactive not attached mode
         else:
@@ -281,30 +279,30 @@ class RobotDevDockerHandler:
         # Display
         if self.component.display:
             docker_command += f'  -e=DISPLAY=:0 \\\n'
-            docker_command +=  '  -v=/run/user/1000/gdm/Xauthority:/root/.Xauthority:ro \\\n'
+            docker_command += '  -v=/run/user/1000/gdm/Xauthority:/root/.Xauthority:ro \\\n'
             docker_command += f'  -v=/tmp/.X11-unix:/tmp/.X11-unix:rw  \\\n'
 
         # Sound
         if self.component.sound:
-            docker_command +=  '  -e PULSE_SERVER=unix:/root/.pulse/native \\\n'
-            docker_command +=  '  -v /run/user/1000/pulse/native:/root/.pulse/native:ro \\\n'
-            docker_command +=  '  -v /home/gary/.config/pulse/cookie:/root/.config/pulse/cookie:ro \\\n'
-            docker_command +=  '  -e PULSE_COOKIE=/root/.config/pulse/cookie \\\n'
+            docker_command += '  -e PULSE_SERVER=unix:/root/.pulse/native \\\n'
+            docker_command += '  -v /run/user/1000/pulse/native:/root/.pulse/native:ro \\\n'
+            docker_command += '  -v /home/gary/.config/pulse/cookie:/root/.config/pulse/cookie:ro \\\n'
+            docker_command += '  -e PULSE_COOKIE=/root/.config/pulse/cookie \\\n'
 
         # Devices
         if self.component.devices:
-            docker_command +=  '  -v /dev:/dev \\\n'
-            docker_command +=  '  -v /run/udev:/run/udev:ro \\\n'
+            docker_command += '  -v /dev:/dev \\\n'
+            docker_command += '  -v /run/udev:/run/udev:ro \\\n'
 
         # System
-        if self.component.system: 
-            docker_command +=  '  -v /sys/kernel/debug/clk:/clk:ro \\\n'
-        
+        if self.component.system:
+            docker_command += '  -v /sys/kernel/debug/clk:/clk:ro \\\n'
+
         # Docker
-        if self.component.config: 
-            docker_command +=  '  -v /var/run/docker.sock:/var/run/docker.sock:ro \\\n'
-            docker_command +=  '  -v /opt/ur:/opt/ur \\\n'
-            
+        if self.component.config:
+            docker_command += '  -v /var/run/docker.sock:/var/run/docker.sock:ro \\\n'
+            docker_command += '  -v /opt/ur:/opt/ur \\\n'
+
         # Env Files
         for env_file in env_files:
             docker_command += f'  --env-file={env_file} \\\n'
@@ -319,7 +317,7 @@ class RobotDevDockerHandler:
             docker_command += f'  -v={":".join(volume_str)} \\\n'
 
         # Image
-        if build_type==BuildImageType.DEVEL:
+        if build_type == BuildImageType.DEVEL:
             docker_command += f'  {self.component.image_name_dev} \\\n'
         else:
             docker_command += f'  {self.component.image_name_prod} \\\n'
@@ -329,20 +327,19 @@ class RobotDevDockerHandler:
 
         try:
             subprocess.run(
-                docker_command, 
-                shell=True, 
+                docker_command,
+                shell=True,
                 check=True,
             )
         except subprocess.CalledProcessError as e:
             if not interactive:
                 raise e
 
-
     def exec_command(self,
-                command: str,
-                interactive=False,
-                build_type=BuildImageType.DEVEL,
-            ):
+                     command: str,
+                     interactive=False,
+                     build_type=BuildImageType.DEVEL,
+                     ):
 
         docker_command = ''
 
@@ -358,11 +355,10 @@ class RobotDevDockerHandler:
 
         try:
             subprocess.run(
-                docker_command, 
-                shell=True, 
+                docker_command,
+                shell=True,
                 check=True,
             )
         except subprocess.CalledProcessError as e:
             if not interactive:
                 raise e
-
