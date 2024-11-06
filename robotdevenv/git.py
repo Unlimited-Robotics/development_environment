@@ -87,6 +87,13 @@ class RobotDevRepositoryHandler:
         branch_commits = set(self.repo.iter_commits(branch))
         branch_tags = [
             tag for tag in self.repo.tags if tag.commit in branch_commits]
+
+        if branch_tags == []:
+            raise RobotDevGitError(
+                f'Repository \'{self.repo_name}\' does not have tags in '
+                f'branch \'{branch_name}\'.'
+            )
+
         branch_tags.sort(key=lambda x: x.commit.committed_date)
 
         return branch_tags
