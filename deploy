@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import argparse
 from robotdevenv.managed_main_execution import managed_main_execution
