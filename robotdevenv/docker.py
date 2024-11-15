@@ -2,6 +2,9 @@ import subprocess
 import json
 import boto3
 import base64
+import subprocess
+from datetime import datetime
+
 from typing import List, Dict
 from enum import IntEnum
 
@@ -27,7 +30,33 @@ class RobotDevDockerHandler:
                  ):
         self.component: Component = component
         self.robot: Robot = robot
-        self.aws_logged_in = False
+        self.aws_logged_in = self.aws_is_logged_in()
+
+    def aws_login(self):
+        print("Logging into AWS")
+        process = subprocess.Popen("aws sso login", shell=True, text=True)
+        data    = process.communicate()[0]
+        rc      = process.returncode
+        if rc == 0:
+            print("AWS login successful")
+            return True
+        else:
+            return False
+
+    def aws_is_logged_in(self):
+        try:
+            result = subprocess.check_output("aws configure export-credentials", shell=True, text=True)
+            credential_details = json.loads(result)
+            credential_expiration = credential_details['Expiration']
+            current_time = datetime.now().isoformat()
+            if current_time > credential_expiration:
+                return self.aws_login()
+            else:
+                return True
+        except Exception as e:
+            print("Encountered Error", e)
+
+
 
     def login_aws(self):
 
