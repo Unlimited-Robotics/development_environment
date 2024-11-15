@@ -4,7 +4,7 @@ import boto3
 import base64
 import subprocess
 from datetime import datetime
-
+import logging
 from typing import List, Dict
 from enum import IntEnum
 
@@ -16,6 +16,7 @@ from robotdevenv.constants import FOLDER_SRC
 from robotdevenv.constants import DEPLOY_DOCKER_REPO_ENDPOINT
 from robotdevenv.constants import GENERIC_PROD_DOCKERFILE
 
+logger = logging.getLogger(__name__)
 
 class BuildImageType(IntEnum):
     DEVEL = 0
@@ -38,9 +39,10 @@ class RobotDevDockerHandler:
         data    = process.communicate()[0]
         rc      = process.returncode
         if rc == 0:
-            print("AWS login successful")
+            logger.info("AWS login successful")
             return True
         else:
+            logger.info("AWS login failed")
             return False
 
     def aws_is_logged_in(self):
@@ -50,54 +52,54 @@ class RobotDevDockerHandler:
             credential_expiration = credential_details['Expiration']
             current_time = datetime.now().isoformat()
             if current_time > credential_expiration:
+                logging.info("Credentials have expired, logging in AWS")
                 return self.aws_login()
             else:
+                logging.info("No need to refresh credentials")
                 return True
         except Exception as e:
-            print("Encountered Error", e)
+            logging.info("Encountered Error", e)
 
 
 
-    def login_aws(self):
+    def aws_login_ecr(self):
+        print('Logging into AWS ECR...')
+        erc_client = boto3.client(service_name='ecr')
+        response = erc_client.get_authorization_token()
 
-        if not self.aws_logged_in:
-            print('Logging to AWS...')
-            erc_client = boto3.client(service_name='ecr')
-            response = erc_client.get_authorization_token()
+        authorization_data = response['authorizationData'][0]
+        token = authorization_data['authorizationToken']
+        registry_url = authorization_data['proxyEndpoint']
 
-            authorization_data = response['authorizationData'][0]
-            token = authorization_data['authorizationToken']
-            registry_url = authorization_data['proxyEndpoint']
+        username, password = base64.b64decode(token)\
+            .decode('utf-8').split(':')
+        logger.info("Logging in to AWS ECR")
+        command = (
+            f'docker login --username {username} --password {password} '
+            f'{registry_url}'
+        )
 
-            username, password = base64.b64decode(token)\
-                .decode('utf-8').split(':')
-
-            command = (
-                f'docker login --username {username} --password {password} '
-                f'{registry_url}'
+        try:
+            subprocess.run(
+                command,
+                shell=True,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
             )
-
-            try:
-                subprocess.run(
-                    command,
-                    shell=True,
-                    check=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE
-                )
-            except subprocess.CalledProcessError as e:
-                print(e.stdout.decode())
-                print(e.stderr.decode())
-                raise e
-            self.aws_logged_in = True
-            print('Success\n')
+        except subprocess.CalledProcessError as e:
+            print(e.stdout.decode())
+            print(e.stderr.decode())
+            raise e
+        self.aws_logged_in = True
+        print('Success\n')
 
     def build_image(self,
                     build_type: BuildImageType,
                     metadata={}
                     ):
 
-        self.login_aws()
+        self.aws_login_ecr()
 
         if build_type == BuildImageType.DEVEL:
             docker_build_context_path = self.component.local_path
@@ -151,7 +153,7 @@ class RobotDevDockerHandler:
 
     def push_image(self, build_type: BuildImageType):
 
-        self.login_aws()
+        self.aws_login_ecr()
 
         if build_type == BuildImageType.DEVEL:
             tag = self.component.image_name_dev
@@ -181,7 +183,7 @@ class RobotDevDockerHandler:
 
     def pull_image(self, image: str):
 
-        self.login_aws()
+        self.aws_login_ecr()
 
         if self.robot.is_local:
             ssh_prefix = ''
@@ -193,12 +195,14 @@ class RobotDevDockerHandler:
             f'{ssh_prefix} docker tag {DEPLOY_DOCKER_REPO_ENDPOINT}/{image} {image} && '
             f'{ssh_prefix} docker rmi {DEPLOY_DOCKER_REPO_ENDPOINT}/{image}'
         )
-
-        subprocess.run(
-            docker_build_command,
-            shell=True,
-            check=True,
-        )
+        try:
+            subprocess.run(
+                docker_build_command,
+                shell=True,
+                check=True,
+            )
+        except subprocess.CalledProcessError as e:
+            print(e)
         print()
 
     def pull_images(self, version: str):

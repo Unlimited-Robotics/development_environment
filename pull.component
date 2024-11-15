@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import subprocess
 import argparse
-
+import os
 from robotdevenv.component import RobotDevComponent as Component
 from robotdevenv.robot import RobotDevRobot as Robot
 from robotdevenv.docker import RobotDevDockerHandler as DockerHandler
@@ -9,6 +9,9 @@ from robotdevenv.docker import BuildImageType
 
 
 def pull_command():
+    # prime AWS ENV Variables
+    os.environ['AWS_REGION']  = 'eu-central-1'
+    os.environ['AWS_PROFILE'] = 'developer-608922983796'
 
     parser = argparse.ArgumentParser()
     robot = Robot(parser=parser)
