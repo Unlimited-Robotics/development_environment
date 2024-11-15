@@ -11,7 +11,7 @@ from robotdevenv.docker import BuildImageType
 def pull_command():
     # prime AWS ENV Variables
     os.environ['AWS_REGION']  = 'eu-central-1'
-    os.environ['AWS_PROFILE'] = 'developer-608922983796'
+    os.environ['AWS_PROFILE'] = 'default'
 
     parser = argparse.ArgumentParser()
     robot = Robot(parser=parser)
