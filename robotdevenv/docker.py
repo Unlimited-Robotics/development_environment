@@ -152,7 +152,7 @@ class RobotDevDockerHandler:
         print()
 
     def push_image(self, build_type: BuildImageType):
-
+        self.aws_is_logged_in()
         self.aws_login_ecr()
 
         if build_type == BuildImageType.DEVEL:
