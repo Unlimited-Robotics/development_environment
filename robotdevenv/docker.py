@@ -45,6 +45,7 @@ class RobotDevDockerHandler:
             logger.info("AWS login failed")
             return False
 
+
     def aws_is_logged_in(self):
         try:
             result = subprocess.check_output("aws configure export-credentials", shell=True, text=True)
