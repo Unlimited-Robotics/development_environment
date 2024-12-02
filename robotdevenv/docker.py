@@ -337,6 +337,10 @@ class RobotDevDockerHandler:
             docker_command += '  -v /var/run/docker.sock:/var/run/docker.sock:ro \\\n'
             docker_command += '  -v /opt/ur:/opt/ur \\\n'
 
+        # Extra flags
+        for flag, value in self.component.extra_component_flags.items():
+            docker_command += f' {flag}={value}  \\\n'
+
         # Env Files
         for env_file in env_files:
             docker_command += f'  --env-file={env_file} \\\n'

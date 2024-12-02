@@ -122,6 +122,11 @@ class RobotDevComponent:
         else:
             config = False
 
+        if 'extra-docker-flags' in component_desc:
+            extra_component_flags = component_desc['extra-docker-flags']
+        else:
+            extra_component_flags = {}
+
         if checks:
             dockerfile_path = local_path / 'dockerfiles' / \
                 f'{robot.platform}.dockerfile'
@@ -185,6 +190,7 @@ class RobotDevComponent:
         self.sound = sound
         self.system = system
         self.config = config
+        self.extra_component_flags = extra_component_flags
         self.devices = devices
         self.dockerfile_path = dockerfile_path
         self.dockerfile_prod_path = dockerfile_prod_path
