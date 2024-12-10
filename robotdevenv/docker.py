@@ -7,6 +7,7 @@ from datetime import datetime
 import logging
 from typing import List, Dict
 from enum import IntEnum
+from botocore.exceptions import TokenRetrievalError
 
 from robotdevenv.component import RobotDevComponent as Component
 from robotdevenv.robot import RobotDevRobot as Robot
@@ -48,6 +49,12 @@ class RobotDevDockerHandler:
 
     def aws_is_logged_in(self):
         try:
+            try:
+                result = boto3.client('sts').get_caller_identity()
+                print("AWS SESSION:", result)
+            except TokenRetrievalError:
+                print("Session has been expired, restarting login process")
+                self.aws_login()
             result = subprocess.check_output("aws configure export-credentials", shell=True, text=True)
             credential_details = json.loads(result)
             credential_expiration = credential_details['Expiration']
