@@ -50,7 +50,7 @@ DEPLOY_DEFAULT_BUILDING_HOST = 'JETSONTABLE001'
 GENERIC_PROD_DOCKERFILE = DEV_ENV_PATH / 'robotdevenv' / 'generic_dockerfiles' / 'production.dockerfile'
 
 # AWS Endpoints
-DEPLOY_DOCKER_REPO_ENDPOINT = '608922983796.dkr.ecr.eu-central-1.amazonaws.com'
+DEPLOY_DOCKER_REPO_ENDPOINT = '329599643140.dkr.ecr.us-east-1.amazonaws.com'
 # DEPLOY_DOCKER_REPO_ENDPOINT = '608922983796.dkr.ecr.us-east-1.amazonaws.com'
 
 
