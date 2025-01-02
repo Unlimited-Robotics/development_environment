@@ -338,6 +338,7 @@ class RobotDevDockerHandler:
         # System
         if self.component.system:
             docker_command += '  -v /sys/kernel/debug/clk:/clk:ro \\\n'
+            docker_command += '  -v /media/ssd/docker/containers:/docker/containers \\\n'
 
         # Docker
         if self.component.config:
