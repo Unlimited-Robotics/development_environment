@@ -121,6 +121,11 @@ class RobotDevComponent:
             config = component_desc['config']
         else:
             config = False
+        
+        if 'greengrass' in component_desc:
+            greengrass = component_desc['greengrass']
+        else:
+            greengrass = False
 
         if 'extra-docker-flags' in component_desc:
             extra_component_flags = component_desc['extra-docker-flags']
@@ -190,6 +195,7 @@ class RobotDevComponent:
         self.sound = sound
         self.system = system
         self.config = config
+        self.greengrass = greengrass
         self.extra_component_flags = extra_component_flags
         self.devices = devices
         self.dockerfile_path = dockerfile_path

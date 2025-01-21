@@ -344,6 +344,10 @@ class RobotDevDockerHandler:
         if self.component.config:
             docker_command += '  -v /var/run/docker.sock:/var/run/docker.sock:ro \\\n'
             docker_command += '  -v /opt/ur:/opt/ur \\\n'
+        
+        # Greengrass
+        if self.component.greengrass:
+            docker_command += '  -v /greengrass/v2:/greengrass/v2 \\\n'
 
         # Extra flags
         for flag, value in self.component.extra_component_flags.items():
