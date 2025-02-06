@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+
+import subprocess
+import os
+import signal
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+def get_gary_hosts(ssh_config_path):
+    gary_hosts = []
+    with open(ssh_config_path, 'r') as file:
+        lines = file.readlines()
+        for i, line in enumerate(lines):
+            if line.lower().startswith('host gary'):
+                host = line.split()[1]
+                next_line = lines[i + 1]
+                if next_line.startswith('  HostName'):
+                    ip = next_line.split()[1]
+                    gary_hosts.append((host, ip))
+    return gary_hosts
+
+def check_device(ip):
+    try:
+        result = subprocess.run(
+            ['ssh', '-o', 'StrictHostKeyChecking=no', f'gary@{ip}', 'exit'],
+            timeout=15,
+            capture_output=True,
+            text=True
+        )
+        if "Permission denied" in result.stderr:
+            return True
+        return "Connection closed" in result.stderr or result.returncode == 0
+    except subprocess.TimeoutExpired:
+        return False
+
+def main():
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    ssh_config_path = os.path.join(script_dir, 'ssh_config')
+    gary_hosts = get_gary_hosts(ssh_config_path)
+    
+    print(f"{'Host':<20} | {'IP':<15} | {'Status':<10}")
+    print("="*50)
+    
+    with ThreadPoolExecutor() as executor:
+        futures = {executor.submit(check_device, ip): (host, ip) for host, ip in gary_hosts}
+        try:
+            for future in as_completed(futures):
+                host, ip = futures.pop(future)
+                status = "\033[92mAVAILABLE\033[0m" if future.result() else "\033[91mNOT AVAILABLE\033[0m"
+                print(f"{host:<20} | {ip:<15} | {status:<10}")
+        except KeyboardInterrupt:
+            print("\nCancelling all pending tasks...")
+            for future in futures:
+                if future.running():
+                    future.cancel()
+            executor.shutdown(wait=True)
+            print("All pending tasks have been cancelled.")
+                
+if __name__ == '__main__':
+    main()
+
