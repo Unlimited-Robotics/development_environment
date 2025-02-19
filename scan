@@ -38,7 +38,7 @@ def main():
     gary_hosts = get_gary_hosts(ssh_config_path)
     
     print(f"{'Host':<20} | {'IP':<15} | {'Status':<10}")
-    print("="*54)
+    print("="*50)
     
     with ThreadPoolExecutor() as executor:
         futures = {executor.submit(check_device, ip): (host, ip) for host, ip in gary_hosts}
