@@ -117,17 +117,26 @@ def main():
                     local_ip = local_ip if local_ip else "N/A"
                     print(f"{host:<20} | {ip:<15} | {local_ip:<15} | {status_text:<10}")
                     if local_ip != "N/A" and not host.endswith('_L'):
-                        if not any(f"Host {host}_L\n" in line for line in open(ssh_config_path)):
+                        existing_local_ip = None
+                        with open(ssh_config_path, 'r') as file:
+                            lines = file.readlines()
+                            for i, line in enumerate(lines):
+                                if line == f"Host {host}_L\n":
+                                    existing_local_ip = lines[i + 1].split()[1]
+                                    break
+                        if existing_local_ip and existing_local_ip != local_ip:
+                            update_ssh_config(ssh_config_path, host, local_ip)
+                        elif not existing_local_ip:
                             added_host = update_ssh_config(ssh_config_path, host, local_ip)
                             added_to_ssh_config.append(added_host)
                             if not any(f"{host}_L:" in line for line in open(robots_yaml_path)):
-                                added_host = update_robots_yaml(robots_yaml_path, host, local = True)
+                                added_host = update_robots_yaml(robots_yaml_path, host, local=True)
                                 added_to_robots_yaml.append(added_host)
                 else:
                     print(f"{host:<20} | {ip:<15} | {status_text:<10}")
                     if status and not host.endswith('_L'):
                         if not any(f"{host}:" in line for line in open(robots_yaml_path)):
-                            added_host = update_robots_yaml(robots_yaml_path, host, local = False)
+                            added_host = update_robots_yaml(robots_yaml_path, host, local=False)
                             added_to_robots_yaml.append(added_host)
         except KeyboardInterrupt:
             print("\nCancelling all pending tasks...")
