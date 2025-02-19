@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+
+import subprocess
+import os
+import signal
+import argparse
+import yaml
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+def get_gary_hosts(ssh_config_path):
+    gary_hosts = []
+    with open(ssh_config_path, 'r') as file:
+        lines = file.readlines()
+        for i, line in enumerate(lines):
+            if line.lower().startswith('host gary'):
+                host = line.split()[1]
+                next_line = lines[i + 1]
+                if next_line.startswith('  HostName'):
+                    ip = next_line.split()[1]
+                    gary_hosts.append((host, ip))
+    return gary_hosts
+
+def check_device(ip, get_local_ip=False):
+    try:
+        result = subprocess.run(
+            ['ssh', '-o', 'StrictHostKeyChecking=no', f'gary@{ip}', 'exit'],
+            timeout=15,
+            capture_output=True,
+            text=True
+        )
+        if "Permission denied" in result.stderr:
+            return True, None
+        if get_local_ip:
+            local_ip_result = subprocess.run(
+                ['ssh', '-o', 'StrictHostKeyChecking=no', f'gary@{ip}', 'ifconfig wlan0 | grep "inet " | awk \'{print $2}\''],
+                timeout=15,
+                capture_output=True,
+                text=True
+            )
+            local_ip = local_ip_result.stdout.strip()
+            return "Connection closed" in result.stderr or result.returncode == 0, local_ip
+        return "Connection closed" in result.stderr or result.returncode == 0, None
+    except subprocess.TimeoutExpired:
+        return False, None
+
+def update_ssh_config(ssh_config_path, host, local_ip):
+    with open(ssh_config_path, 'r') as file:
+        lines = file.readlines()
+
+    host_line = f"Host {host}_L\n"
+    hostname_line = f"  HostName {local_ip}\n"
+    updated = False
+
+    for i, line in enumerate(lines):
+        if line == host_line:
+            lines[i + 1] = hostname_line
+            updated = True
+            break
+
+    if not updated:
+        lines.append(host_line)
+        lines.append(hostname_line)
+
+    with open(ssh_config_path, 'w') as file:
+        file.writelines(lines)
+    
+    return host
+
+def update_robots_yaml(robots_yaml_path, host, local):
+    if os.path.exists(robots_yaml_path):
+        with open(robots_yaml_path, 'r') as file:
+            robots = yaml.safe_load(file)
+    else:
+        robots = {}
+
+    if local and not host.endswith('_L'):
+        host_L = f"{host}_L"
+    else:
+        host_L = host
+
+    if host_L not in robots:
+        robots[host_L] = {'platform': 'jetsonorin'}
+
+    with open(robots_yaml_path, 'w') as file:
+        yaml.safe_dump(robots, file)
+    
+    return host_L
+
+def main():
+    parser = argparse.ArgumentParser(description='Scan GARY hosts.')
+    parser.add_argument('-l', '--local-ip', action='store_true', help='Include local IP in the output and add hosts to robots.yaml')
+    args = parser.parse_args()
+
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    ssh_config_path = os.path.join(script_dir, 'ssh_config')
+    robots_yaml_path = os.path.join(script_dir, 'robots.yaml')
+    gary_hosts = get_gary_hosts(ssh_config_path)
+    
+    added_to_ssh_config = []
+    added_to_robots_yaml = []
+    
+    if args.local_ip:
+        print(f"{'Host':<20} | {'IP':<15} | {'Local IP':<15} | {'Status':<10}")
+        print("="*72)
+    else:
+        print(f"{'Host':<20} | {'IP':<15} | {'Status':<10}")
+        print("="*54)
+    
+    with ThreadPoolExecutor() as executor:
+        futures = {executor.submit(check_device, ip, args.local_ip): (host, ip) for host, ip in gary_hosts}
+        try:
+            for future in as_completed(futures):
+                host, ip = futures.pop(future)
+                status, local_ip = future.result()
+                status_text = "\033[92mAVAILABLE\033[0m" if status else "\033[91mNOT AVAILABLE\033[0m"
+                if args.local_ip:
+                    local_ip = local_ip if local_ip else "N/A"
+                    print(f"{host:<20} | {ip:<15} | {local_ip:<15} | {status_text:<10}")
+                    if local_ip != "N/A" and not host.endswith('_L'):
+                        existing_local_ip = None
+                        with open(ssh_config_path, 'r') as file:
+                            lines = file.readlines()
+                            for i, line in enumerate(lines):
+                                if line == f"Host {host}_L\n":
+                                    existing_local_ip = lines[i + 1].split()[1]
+                                    break
+                        if existing_local_ip and existing_local_ip != local_ip:
+                            update_ssh_config(ssh_config_path, host, local_ip)
+                        elif not existing_local_ip:
+                            added_host = update_ssh_config(ssh_config_path, host, local_ip)
+                            added_to_ssh_config.append(added_host)
+                            if not any(f"{host}_L:" in line for line in open(robots_yaml_path)):
+                                added_host = update_robots_yaml(robots_yaml_path, host, local=True)
+                                added_to_robots_yaml.append(added_host)
+                else:
+                    print(f"{host:<20} | {ip:<15} | {status_text:<10}")
+                    if status and not host.endswith('_L'):
+                        if not any(f"{host}:" in line for line in open(robots_yaml_path)):
+                            added_host = update_robots_yaml(robots_yaml_path, host, local=False)
+                            added_to_robots_yaml.append(added_host)
+        except KeyboardInterrupt:
+            print("\nCancelling all pending tasks...")
+            for future in futures:
+                if future.running():
+                    future.cancel()
+            executor.shutdown(wait=True)
+            print("All pending tasks have been cancelled.")
+    
+    if added_to_ssh_config:
+        print("\nAdded to ssh_config:")
+        for host in added_to_ssh_config:
+            print(f"  {host}_L")
+    
+    if added_to_robots_yaml:
+        print("\nAdded to robots.yaml:")
+        for host in added_to_robots_yaml:
+            print(f"  {host}")
+                
+if __name__ == '__main__':
+    main()
+
