@@ -28,10 +28,12 @@ def build_component():
 
     parser.add_argument('-p', '--prod', action='store_true')
     parser.add_argument('-d', '--debug', action='store_true')
+    parser.add_argument('-v', '--verbose', action='store_true')
     args = dict(parser.parse_known_args()[0]._get_kwargs())
 
     build_type = BuildImageType.PROD if args['prod'] else BuildImageType.DEVEL
     debug_enable = args['debug']
+    verbose = args['verbose']
 
     metadata = {
                 'REPO_NAME': component.repo_name,
@@ -42,7 +44,7 @@ def build_component():
             }
 
     docker_handler.build_image(
-        build_type=build_type, metadata=metadata
+        build_type=build_type, metadata=metadata, verbose=verbose,
     )
 
 

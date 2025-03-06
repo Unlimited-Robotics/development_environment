@@ -105,7 +105,8 @@ class RobotDevDockerHandler:
 
     def build_image(self,
                     build_type: BuildImageType,
-                    metadata={}
+                    metadata={},
+                    verbose=False,
                     ):
 
         self.aws_login_ecr()
@@ -140,9 +141,11 @@ class RobotDevDockerHandler:
             f'--build-arg REGISTRY_ENDPOINT={DEPLOY_DOCKER_REPO_ENDPOINT} '
             f'--build-arg REPOS_LIST=\'{" ".join(self.component.src)}\' '
             f'--build-arg PACKAGES_LIST=\'{" ".join(self.component.ros_pkgs)}\' '
-            '--progress=plain '
             f'--tag {tag} '
         )
+
+        if verbose:
+            docker_build_command += '--progress=plain '
 
         for key in metadata:
             docker_build_command += f'--build-arg {key}=\'{metadata[key]}\' '
