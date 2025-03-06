@@ -102,6 +102,7 @@ class RobotDevDockerHandler:
         self.aws_logged_in = True
         print('Success\n')
 
+
     def build_image(self,
                     build_type: BuildImageType,
                     metadata={}
@@ -130,8 +131,12 @@ class RobotDevDockerHandler:
         if not self.robot.is_local:
             docker_build_command += f'DOCKER_HOST=ssh://{self.robot.name} '
 
+        docker_build_command += 'docker build '
+
+        if self.robot.platform == 'x86_64':
+            docker_build_command += '--network=host '
+
         docker_build_command += (
-            'docker build '
             f'--build-arg REGISTRY_ENDPOINT={DEPLOY_DOCKER_REPO_ENDPOINT} '
             f'--build-arg REPOS_LIST=\'{" ".join(self.component.src)}\' '
             f'--build-arg PACKAGES_LIST=\'{" ".join(self.component.ros_pkgs)}\' '
@@ -300,9 +305,6 @@ class RobotDevDockerHandler:
             '  --pid=host \\\n'
         )
 
-        if self.robot.platform == 'jetsonorinagx':
-            docker_command += '  --runtime nvidia \\\n'
-
         docker_command += f'  --name {self.component.container_name}\\\n'
 
         # Interactive mode
@@ -317,6 +319,12 @@ class RobotDevDockerHandler:
         else:
             docker_command += '  --rm \\\n'
 
+        # Nvidia
+        if self.robot.platform == 'jetsonorinagx':
+            docker_command += '  --runtime nvidia \\\n'
+        elif self.component.nvidia:
+            docker_command += '  --runtime nvidia --gpus all -e NVIDIA_DRIVER_CAPABILITIES=all \\\n'
+        
         # Display
         if self.component.display:
             docker_command += f'  -e=DISPLAY=:0 \\\n'

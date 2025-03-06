@@ -86,51 +86,17 @@ class RobotDevComponent:
         else:
             version_prod = None
             version_dev = None
-        
-        if 'src' in component_desc:
-            src = component_desc['src']
-        else:
-            src = []
 
-        if 'ros_pkgs' in component_desc:
-            ros_pkgs = component_desc['ros_pkgs']
-        else:
-            ros_pkgs = []
-
-        if 'display' in component_desc:
-            display = component_desc['display']
-        else:
-            display = False
-
-        if 'sound' in component_desc:
-            sound = component_desc['sound']
-        else:
-            sound = False
-
-        if 'devices' in component_desc:
-            devices = component_desc['devices']
-        else:
-            devices = False
-
-        if 'system' in component_desc:
-            system = component_desc['system']
-        else:
-            system = False
-
-        if 'config' in component_desc:
-            config = component_desc['config']
-        else:
-            config = False
-        
-        if 'greengrass' in component_desc:
-            greengrass = component_desc['greengrass']
-        else:
-            greengrass = False
-
-        if 'extra-docker-flags' in component_desc:
-            extra_component_flags = component_desc['extra-docker-flags']
-        else:
-            extra_component_flags = {}
+        src = component_desc.get('src', [])
+        ros_pkgs = component_desc.get('ros_pkgs', [])
+        display = component_desc.get('display', False)
+        sound = component_desc.get('sound', False)
+        devices = component_desc.get('devices', False)
+        nvidia = component_desc.get('nvidia', False)
+        system = component_desc.get('system', False)
+        config = component_desc.get('config', False)
+        greengrass = component_desc.get('greengrass', False)
+        extra_component_flags = component_desc.get('extra-docker-flags', {})
 
         if checks:
             dockerfile_path = local_path / 'dockerfiles' / \
@@ -193,6 +159,7 @@ class RobotDevComponent:
         self.ros_pkgs = ros_pkgs
         self.display = display
         self.sound = sound
+        self.nvidia = nvidia
         self.system = system
         self.config = config
         self.greengrass = greengrass
