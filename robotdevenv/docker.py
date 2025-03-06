@@ -135,7 +135,7 @@ class RobotDevDockerHandler:
             f'--build-arg REGISTRY_ENDPOINT={DEPLOY_DOCKER_REPO_ENDPOINT} '
             f'--build-arg REPOS_LIST=\'{" ".join(self.component.src)}\' '
             f'--build-arg PACKAGES_LIST=\'{" ".join(self.component.ros_pkgs)}\' '
-            # '--progress=plain '
+            '--progress=plain '
             f'--tag {tag} '
         )
 

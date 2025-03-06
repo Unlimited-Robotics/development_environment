@@ -27,13 +27,16 @@ def build_component():
     print()
 
     parser.add_argument('-p', '--prod', action='store_true')
+    parser.add_argument('-d', '--debug', action='store_true')
     args = dict(parser.parse_known_args()[0]._get_kwargs())
 
     build_type = BuildImageType.PROD if args['prod'] else BuildImageType.DEVEL
+    debug_enable = args['debug']
 
     metadata = {
                 'REPO_NAME': component.repo_name,
                 'COMPONENT_NAME': component.name,
+                'DEBUG_ENABLE': debug_enable
                 # 'REPO_METADATA': json.dumps(self.manifest),
                 # 'COMPONENT_METADATA': json.dumps(component.component_desc),
             }
