@@ -21,3 +21,6 @@ robots.yaml
 
 /config/*
 !/config/env
+
+install
+log
