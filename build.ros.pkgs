@@ -29,7 +29,7 @@ def build_ros_packages_component():
     print(f'🤖🤖      Robot: {robot.name}')
     print()
 
-    parser.add_argument('--debug', action='store_true')
+    parser.add_argument('-d', '--debug', action='store_true')
     parser.add_argument('-s', '--sync', action='store_true')
     parser.add_argument('--packages-select', nargs='+', type=str)
     args = dict(parser.parse_known_args()[0]._get_kwargs())
