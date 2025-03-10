@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+
+import argparse
+from robotdevenv.managed_main_execution import managed_main_execution
+from robotdevenv.deploy import RobotDevDeployHandler as DeployHandler
+
+
+def deploy_repository():
+
+    print()
+    print('🤖🤖 UR ROBOT DEVELOPMENT ENVIRONMENT 🤖🤖')
+    print(f'  🚀 Deploy command 😎')
+    print()
+
+    parser = argparse.ArgumentParser()
+    robot_dev_deploy = DeployHandler(parser)
+    robot_dev_deploy.deploy()
+
+
+if __name__ == '__main__':
+    managed_main_execution(deploy_repository)
