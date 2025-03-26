@@ -24,3 +24,4 @@ robots.yaml
 
 install
 log
+*.log
