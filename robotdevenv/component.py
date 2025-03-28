@@ -155,6 +155,7 @@ class RobotDevComponent:
         self.version_dev = version_dev
         self.version_prod = version_prod
         self.component_desc = component_desc
+        self.repo_manifest = repo_manifest
         self.src = src
         self.ros_pkgs = ros_pkgs
         self.display = display

@@ -1,5 +1,6 @@
 import yaml
 import pathlib
+import json
 from enum import Enum
 
 from robotdevenv.component import RobotDevComponent as Component
@@ -138,6 +139,10 @@ class RobotDevRunHandler(Singleton):
                 'IDCOMPONENT': self.component.name,
                 'PLATFORM': self.robot.platform,
                 'ROBOT_NAME': ROBOT_NAME,
+                'REPO_NAME': self.component.repo_name,
+                'COMPONENT_NAME': self.component.name,
+                'REPO_METADATA': f'\'{json.dumps(self.component.repo_manifest)}\'',
+                'COMPONENT_METADATA': f'\'{json.dumps(self.component.component_desc)}\'',
             }
 
             if 'ROS_DOMAIN_ID' in env_vars_from_files:

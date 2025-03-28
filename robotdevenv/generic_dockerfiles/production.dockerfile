@@ -38,6 +38,12 @@ COPY --from=builder /robot/build /robot/build
 COPY /${REPO_NAME}/components/${COMPONENT_NAME}/commands /robot/commands
 COPY /${REPO_NAME}/components/${COMPONENT_NAME}/component_static_data /robot/component_static_data
 
+# Env Variables
+ENV REPO_NAME=${REPO_NAME}
+ENV COMPONENT_NAME=${COMPONENT_NAME}
+ENV REPO_METADATA=${REPO_METADATA}
+ENV COMPONENT_METADATA=${COMPONENT_METADATA}
+
 # Labels
 LABEL REPO_NAME=${REPO_NAME}
 LABEL COMPONENT_NAME=${COMPONENT_NAME}
