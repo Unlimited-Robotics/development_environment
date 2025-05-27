@@ -4,6 +4,7 @@ __pycache__/
 /local_cache
 robots.yaml
 /borrar
+venv/
 
 .vscode
 
