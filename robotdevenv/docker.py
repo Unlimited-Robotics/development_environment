@@ -323,7 +323,7 @@ class RobotDevDockerHandler:
             docker_command += '  --rm \\\n'
 
         # Nvidia
-        if self.robot.platform == 'jetsonorinagx':
+        if self.robot.platform == 'jetsonorin':
             docker_command += '  --runtime nvidia \\\n'
         elif self.component.nvidia:
             docker_command += '  --runtime nvidia --gpus all -e NVIDIA_DRIVER_CAPABILITIES=all \\\n'
