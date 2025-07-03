@@ -32,7 +32,8 @@ class RobotDevDockerHandler:
                  ):
         self.component: Component = component
         self.robot: Robot = robot
-        self.aws_logged_in = self.aws_is_logged_in()
+        # self.aws_logged_in = self.aws_is_logged_in()
+        self.aws_logged_in = False
 
     def aws_login(self):
         print("Logging into AWS")
@@ -109,7 +110,7 @@ class RobotDevDockerHandler:
                     verbose=False,
                     ):
 
-        self.aws_login_ecr()
+        # self.aws_login_ecr()
 
         if build_type == BuildImageType.DEVEL:
             docker_build_context_path = self.component.local_path
@@ -168,8 +169,8 @@ class RobotDevDockerHandler:
         print()
 
     def push_image(self, build_type: BuildImageType):
-        self.aws_is_logged_in()
-        self.aws_login_ecr()
+        # self.aws_is_logged_in()
+        # self.aws_login_ecr()
 
         if build_type == BuildImageType.DEVEL:
             tag = self.component.image_name_dev
