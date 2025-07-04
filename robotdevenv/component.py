@@ -78,6 +78,7 @@ class RobotDevComponent:
                     f'Repository manifest file \'{repo_manifest_path}\' not found.'
                 )
         else:
+            repo_manifest = None
             component_desc = {}
         
         if checks:
