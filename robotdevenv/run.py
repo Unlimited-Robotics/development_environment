@@ -10,7 +10,6 @@ from robotdevenv.singleton import Singleton
 from robotdevenv.git import RobotDevGitHandler
 from robotdevenv.docker import BuildImageType
 
-from robotdevenv.constants import FILE_ROS_DOMAINS_PATH
 from robotdevenv.constants import DEV_ENV_PATH
 from robotdevenv.constants import FOLDER_CONFIG
 from robotdevenv.constants import ROBOT_NAME
@@ -85,16 +84,6 @@ class RobotDevRunHandler(Singleton):
         if container_info is None:
             # The container does not exist
 
-            # ROS Domain ID definition
-            with open(FILE_ROS_DOMAINS_PATH, 'r') as file:
-                ros_domain_ids = yaml.safe_load(file)
-            git_email = RobotDevGitHandler.get_email()
-            if git_email not in ros_domain_ids:
-                raise RobotDevRunError(
-                        f'{git_email} not defined in {FILE_ROS_DOMAINS_PATH}'
-                    )
-            ros_domain_id = ros_domain_ids[git_email]
-
             # Config folder definition
             config_path_global = GLOBAL_CONFIG_PATH
             config_localpath_devenv = DEV_ENV_PATH / FOLDER_CONFIG
@@ -144,13 +133,7 @@ class RobotDevRunHandler(Singleton):
                 'REPO_METADATA': f'\'{json.dumps(self.component.repo_manifest)}\'',
                 'COMPONENT_METADATA': f'\'{json.dumps(self.component.component_desc)}\'',
             }
-
-            if 'ROS_DOMAIN_ID' in env_vars_from_files:
-                env_vars['ROS_DOMAIN_ID'] = env_vars_from_files['ROS_DOMAIN_ID']
-                print('⚠️  Using \'ROS_DOMAIN_ID\' from files instead of static one.')
-                print()
-            else:
-                env_vars['ROS_DOMAIN_ID'] = ros_domain_id
+            env_vars['ROS_DOMAIN_ID'] = 0
 
             # Volumes
             volumes = self.component.get_volumes(

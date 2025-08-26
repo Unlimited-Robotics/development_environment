@@ -78,12 +78,12 @@ class RobotDevComponent:
                     f'Repository manifest file \'{repo_manifest_path}\' not found.'
                 )
         else:
-            repo_manifest = None
             component_desc = {}
         
         if checks:
             version_prod = repo_manifest['version']
-            version_dev = version_prod.replace('.beta','') + '.dev'
+            version_dev = version_prod
+            # version_dev = version_prod.replace('.beta','') + '.dev'
         else:
             version_prod = None
             version_dev = None
@@ -127,12 +127,12 @@ class RobotDevComponent:
 
         if checks:
             repo = RepoHandler(repo_path)
-            try:
-                repo.assert_deploy_branch()
-                repo.assert_no_local_changes()
-                repo.assert_pointing_to_tag()
-            except RobotDevGitError:
-                image_name_dev += '.changes'
+            # try:
+            #     repo.assert_deploy_branch()
+            #     repo.assert_no_local_changes()
+            #     repo.assert_pointing_to_tag()
+            # except RobotDevGitError:
+            #     image_name_dev += '.changes'
         else:
             repo = None
 

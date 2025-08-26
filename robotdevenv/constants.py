@@ -25,7 +25,6 @@ FOLDER_COMPONENT_PERSISTENT_DATA = 'component_persistent_data'
 # LOCAL
 DEV_ENV_PATH = pathlib.Path(__file__).resolve().parent.parent
 LOCAL_SRC_PATH = DEV_ENV_PATH / FOLDER_SRC
-FILE_ROS_DOMAINS_PATH = DEV_ENV_PATH / 'users_ros_domains.yaml'
 FILE_ROBOTS_PATH = DEV_ENV_PATH / 'robots.yaml'
 
 # GLOBAL
