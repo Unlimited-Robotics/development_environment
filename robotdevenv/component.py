@@ -117,7 +117,9 @@ class RobotDevComponent:
         else:
             dockerfile_prod_path = None
 
-        image_name_base = f'{".".join(repo_name.split("_", 2))}.{name}:{robot.platform}'
+        # image_name_base = f'{".".join(repo_name.split("_", 2))}.{name}:{robot.platform}'
+        image_name_base = f'{repo_name}.{name}:{robot.platform}'
+
         if checks:
             image_name_dev = f'{image_name_base}.{version_dev}'
             image_name_prod = f'{image_name_base}.{version_prod}'
